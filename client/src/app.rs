@@ -1,12 +1,13 @@
 use chrono::{DateTime, Local, Utc};
 use terma_shared::ChatMessage;
+use tui_textarea::TextArea;
 
 pub struct App {
     pub room_id: String,
     pub user_id: String,
     pub username: String,
     pub messages: Vec<DisplayMessage>,
-    pub input: String,
+    pub input: TextArea<'static>,
     pub online_count: usize,
     pub scroll_offset: usize,
     pub connected: bool,
@@ -29,7 +30,7 @@ impl App {
             user_id,
             username,
             messages: Vec::new(),
-            input: String::new(),
+            input: TextArea::default(),
             online_count: 0,
             scroll_offset: 0,
             connected: false,
@@ -68,16 +69,10 @@ impl App {
         });
     }
 
-    pub fn input_push(&mut self, c: char) {
-        self.input.push(c);
-    }
-
-    pub fn input_pop(&mut self) {
-        self.input.pop();
-    }
-
     pub fn input_take(&mut self) -> String {
-        std::mem::take(&mut self.input)
+        let lines = self.input.lines().to_vec();
+        self.input = TextArea::default();
+        lines.join("\n")
     }
 
     pub fn scroll_up(&mut self) {
