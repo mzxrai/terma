@@ -68,11 +68,18 @@ async fn handle_socket(socket: WebSocket, room_id: String, state: AppState) {
 
     room.add_connection(user_id.clone(), username.clone(), tx);
 
-    // Send welcome message with history
-    let history = room.get_history();
+    // Get online count before releasing lock
     let online_count = room.online_count();
 
     drop(rooms);
+
+    // Send welcome message with history from database
+    let history = db::get_message_history(&state.db, &room_id)
+        .await
+        .unwrap_or_else(|e| {
+            error!("Failed to load message history: {}", e);
+            Vec::new()
+        });
 
     let welcome = ServerMessage::Welcome {
         room_id: room_id.clone(),
@@ -199,8 +206,8 @@ async fn handle_client_message(
                 return;
             }
 
-            let mut rooms = state.rooms.write().await;
-            if let Some(room) = rooms.get_mut(room_id) {
+            let rooms = state.rooms.read().await;
+            if let Some(room) = rooms.get(room_id) {
                 let username = room.get_username(user_id).unwrap_or_else(|| "Unknown".to_string());
 
                 let chat_msg = ChatMessage::new(
@@ -210,7 +217,11 @@ async fn handle_client_message(
                     content,
                 );
 
-                room.add_message(chat_msg.clone());
+                // Save message to database
+                if let Err(e) = db::save_message(&state.db, &chat_msg).await {
+                    error!("Failed to save message to database: {}", e);
+                    // Continue broadcasting even if save fails
+                }
 
                 let server_msg = ServerMessage::Message {
                     message: chat_msg,
