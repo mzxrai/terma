@@ -7,8 +7,6 @@ use std::path::PathBuf;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub username: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub host: Option<String>,
 }
 
 impl Config {
@@ -66,29 +64,10 @@ pub fn get_or_prompt_username() -> Result<String> {
             // Save config
             let config = Config {
                 username: username.clone(),
-                host: None,
             };
             config.save()?;
 
             Ok(username)
         }
     }
-}
-
-#[allow(dead_code)]
-pub fn save_host(host: String) -> Result<()> {
-    let mut config = Config::load().unwrap_or_else(|_| Config {
-        username: String::new(),
-        host: None,
-    });
-
-    config.host = Some(host);
-    config.save()?;
-    Ok(())
-}
-
-#[allow(dead_code)]
-pub fn get_host() -> Result<String> {
-    let config = Config::load()?;
-    config.host.ok_or_else(|| anyhow::anyhow!("No host configured"))
 }
