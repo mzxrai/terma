@@ -27,7 +27,7 @@ case "$ARCH" in
         ;;
 esac
 
-BINARY_NAME="terma-client-${{PLATFORM}}-${{ARCH}}"
+BINARY_NAME="terma-${{PLATFORM}}-${{ARCH}}"
 DOWNLOAD_URL="http://${{HOST}}/download/${{BINARY_NAME}}"
 
 echo "Downloading terma client..."
@@ -47,11 +47,11 @@ chmod +x "$TEMP_FILE"
 # Move to a permanent location
 INSTALL_DIR="${{HOME}}/.local/bin"
 mkdir -p "$INSTALL_DIR"
-BINARY_PATH="${{INSTALL_DIR}}/terma-client"
+BINARY_PATH="${{INSTALL_DIR}}/terma"
 mv "$TEMP_FILE" "$BINARY_PATH"
 
 echo ""
-echo "✓ Terma client installed to $BINARY_PATH"
+echo "✓ Terma installed to $BINARY_PATH"
 echo ""
 
 # Check if ~/.local/bin is in PATH
@@ -59,7 +59,7 @@ case ":$PATH:" in
     *":$INSTALL_DIR:"*)
         ;;
     *)
-        echo "Note: Add $INSTALL_DIR to your PATH to run 'terma-client' from anywhere:"
+        echo "Note: Add $INSTALL_DIR to your PATH to run 'terma' from anywhere:"
         echo ""
         echo "For bash/zsh, add this to ~/.bashrc or ~/.zshrc:"
         echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
