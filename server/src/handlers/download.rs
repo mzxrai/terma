@@ -8,8 +8,8 @@ use tokio::fs::File;
 use tokio_util::io::ReaderStream;
 
 pub async fn download_binary(Path(filename): Path<String>) -> Response {
-    // Only allow downloading terma-client binaries
-    if !filename.starts_with("terma-client-") {
+    // Only allow downloading terma binaries
+    if !filename.starts_with("terma-") {
         return (StatusCode::NOT_FOUND, "Binary not found").into_response();
     }
 
@@ -28,10 +28,10 @@ pub async fn download_binary(Path(filename): Path<String>) -> Response {
     }
 
     // Development mode: serve from local build
-    let binary_path = std::path::PathBuf::from("target/release/terma-client");
+    let binary_path = std::path::PathBuf::from("target/release/terma");
 
     if !binary_path.exists() {
-        return (StatusCode::NOT_FOUND, "Binary not found. Run `cargo build --release --bin terma-client`").into_response();
+        return (StatusCode::NOT_FOUND, "Binary not found. Run `cargo build --release -p terma-client`").into_response();
     }
 
     let file = match File::open(&binary_path).await {
@@ -46,7 +46,7 @@ pub async fn download_binary(Path(filename): Path<String>) -> Response {
         StatusCode::OK,
         [
             (header::CONTENT_TYPE, "application/octet-stream"),
-            (header::CONTENT_DISPOSITION, "attachment; filename=\"terma-client\""),
+            (header::CONTENT_DISPOSITION, "attachment; filename=\"terma\""),
         ],
         body,
     )
