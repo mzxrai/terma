@@ -13,6 +13,8 @@ use tracing::{error, info, warn};
 
 use crate::{db, state::AppState};
 
+const MAX_MESSAGE_LENGTH: usize = 4096;
+
 pub async fn websocket_handler(
     ws: WebSocketUpgrade,
     Path(room_id): Path<String>,
