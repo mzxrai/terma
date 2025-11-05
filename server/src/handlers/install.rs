@@ -5,13 +5,13 @@ use axum::{
 };
 
 pub async fn install_script(Path(room_id): Path<String>) -> Response {
-    let script = format!(r#"#!/bin/bash
+    let script = format!(r#"#!/bin/sh
 set -e
 
 ROOM_ID="{}"
 
 HOST="${{HOST:-localhost:3000}}"
-PLATFORM="$(uname -s | tr '[:upper:]' '[:lower:]')"
+PLATFORM="$(uname -s | tr 'A-Z' 'a-z')"
 ARCH="$(uname -m)"
 
 case "$ARCH" in
@@ -55,12 +55,17 @@ echo "✓ Terma client installed to $BINARY_PATH"
 echo ""
 
 # Check if ~/.local/bin is in PATH
-if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
-    echo "Note: Add $INSTALL_DIR to your PATH to run 'terma-client' from anywhere:"
-    echo "  echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.bashrc"
-    echo "  source ~/.bashrc"
-    echo ""
-fi
+case ":$PATH:" in
+    *":$INSTALL_DIR:"*)
+        ;;
+    *)
+        echo "Note: Add $INSTALL_DIR to your PATH to run 'terma-client' from anywhere:"
+        echo ""
+        echo "For bash/zsh, add this to ~/.bashrc or ~/.zshrc:"
+        echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+        echo ""
+        ;;
+esac
 
 echo "✓ Connecting to room $ROOM_ID..."
 echo ""
