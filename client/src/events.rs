@@ -8,8 +8,8 @@ pub fn handle_key_event(app: &mut crate::app::App, key: KeyEvent) -> Option<Stri
             None
         }
         KeyCode::Enter if key.modifiers.contains(KeyModifiers::SHIFT) => {
-            // Shift+Enter: add new line (forward to TextArea)
-            app.input.input(Input::from(key));
+            // Shift+Enter: insert new line
+            app.input.insert_newline();
             None
         }
         KeyCode::Enter => {
