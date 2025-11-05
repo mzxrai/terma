@@ -1,5 +1,4 @@
 use chrono::{DateTime, Local, Utc};
-use ratatui::style::{Modifier, Style};
 use terma_shared::ChatMessage;
 use tui_textarea::TextArea;
 
@@ -26,9 +25,8 @@ pub struct DisplayMessage {
 
 impl App {
     pub fn new(room_id: String, user_id: String, username: String) -> Self {
-        let mut input = TextArea::default();
-        // Hide line numbers completely
-        input.set_line_number_style(Style::default().add_modifier(Modifier::HIDDEN));
+        // Line numbers are disabled by default in TextArea
+        let input = TextArea::default();
 
         Self {
             room_id,
