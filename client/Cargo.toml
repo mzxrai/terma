@@ -1,0 +1,23 @@
+[package]
+name = "terma-client"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+terma-shared = { path = "../shared" }
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+
+ratatui = "0.29"
+crossterm = "0.28"
+tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
+futures = "0.3"
+chrono = "0.4"
+uuid = "1.11"
+
+[[bin]]
+name = "terma-client"
+path = "src/main.rs"

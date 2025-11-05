@@ -1,0 +1,86 @@
+use axum::extract::ws::Message;
+use sqlx::{Pool, Sqlite};
+use std::collections::{HashMap, VecDeque};
+use std::sync::Arc;
+use terma_shared::ChatMessage;
+use tokio::sync::{mpsc, RwLock};
+
+const MAX_MESSAGE_HISTORY: usize = 100;
+
+#[derive(Clone)]
+pub struct AppState {
+    pub db: Pool<Sqlite>,
+    pub rooms: Arc<RwLock<HashMap<String, RoomState>>>,
+}
+
+pub struct RoomState {
+    pub connections: HashMap<String, mpsc::UnboundedSender<Message>>,
+    pub message_history: VecDeque<ChatMessage>,
+}
+
+impl RoomState {
+    pub fn new() -> Self {
+        Self {
+            connections: HashMap::new(),
+            message_history: VecDeque::with_capacity(MAX_MESSAGE_HISTORY),
+        }
+    }
+
+    pub fn add_message(&mut self, message: ChatMessage) {
+        if self.message_history.len() >= MAX_MESSAGE_HISTORY {
+            self.message_history.pop_front();
+        }
+        self.message_history.push_back(message);
+    }
+
+    pub fn get_history(&self) -> Vec<ChatMessage> {
+        self.message_history.iter().cloned().collect()
+    }
+
+    pub fn online_count(&self) -> usize {
+        self.connections.len()
+    }
+
+    pub fn add_connection(&mut self, user_id: String, tx: mpsc::UnboundedSender<Message>) {
+        self.connections.insert(user_id, tx);
+    }
+
+    pub fn remove_connection(&mut self, user_id: &str) -> bool {
+        self.connections.remove(user_id).is_some()
+    }
+
+    pub fn broadcast(&self, message: Message, exclude_user: Option<&str>) {
+        for (user_id, tx) in &self.connections {
+            if let Some(excluded) = exclude_user {
+                if user_id == excluded {
+                    continue;
+                }
+            }
+            let _ = tx.send(message.clone());
+        }
+    }
+
+    pub fn send_to_user(&self, user_id: &str, message: Message) {
+        if let Some(tx) = self.connections.get(user_id) {
+            let _ = tx.send(message);
+        }
+    }
+}
+
+impl AppState {
+    pub fn new(db: Pool<Sqlite>) -> Self {
+        Self {
+            db,
+            rooms: Arc::new(RwLock::new(HashMap::new())),
+        }
+    }
+}
+
+impl Clone for RoomState {
+    fn clone(&self) -> Self {
+        Self {
+            connections: HashMap::new(),
+            message_history: self.message_history.clone(),
+        }
+    }
+}

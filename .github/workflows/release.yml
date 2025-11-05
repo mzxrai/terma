@@ -1,0 +1,92 @@
+name: Release Binaries
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            name: terma-client-darwin-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            name: terma-client-darwin-aarch64
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            name: terma-client-linux-x86_64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            name: terma-client-linux-aarch64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross for ARM Linux
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Build
+        run: |
+          if [ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]; then
+            cross build --release --target ${{ matrix.target }} --bin terma-client
+          else
+            cargo build --release --target ${{ matrix.target }} --bin terma-client
+          fi
+
+      - name: Rename binary
+        run: |
+          cp target/${{ matrix.target }}/release/terma-client ${{ matrix.name }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ matrix.name }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: binaries
+
+      - name: Display structure of downloaded files
+        run: ls -R binaries
+
+      - name: Create/Update Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: latest
+          name: Latest Binaries
+          draft: false
+          prerelease: false
+          files: |
+            binaries/terma-client-darwin-x86_64/terma-client-darwin-x86_64
+            binaries/terma-client-darwin-aarch64/terma-client-darwin-aarch64
+            binaries/terma-client-linux-x86_64/terma-client-linux-x86_64
+            binaries/terma-client-linux-aarch64/terma-client-linux-aarch64
+          body: |
+            Automatically built binaries for all platforms.
+            Updated on every push to main/master.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
