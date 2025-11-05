@@ -18,6 +18,23 @@ pub fn render(frame: &mut Frame, app: &mut App) {
         ])
         .split(frame.area());
 
+    // Clamp scroll before rendering
+    let visible_height = chunks[1].height.saturating_sub(2) as usize;
+    let available_width = chunks[1].width.saturating_sub(2) as usize;
+    let total_lines: usize = app
+        .messages
+        .iter()
+        .map(|msg| {
+            let formatted = msg.format_for_display();
+            if available_width == 0 {
+                1
+            } else {
+                ((formatted.len() + available_width - 1) / available_width).max(1)
+            }
+        })
+        .sum();
+    app.clamp_scroll(total_lines, visible_height);
+
     render_header(frame, app, chunks[0]);
     render_messages(frame, app, chunks[1]);
     render_input(frame, app, chunks[2]);
@@ -61,7 +78,7 @@ fn render_header(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(header, area);
 }
 
-fn render_messages(frame: &mut Frame, app: &mut App, area: Rect) {
+fn render_messages(frame: &mut Frame, app: &App, area: Rect) {
     // Build all messages without truncation
     let messages: Vec<Line> = app
         .messages
@@ -104,18 +121,10 @@ fn render_messages(frame: &mut Frame, app: &mut App, area: Rect) {
         })
         .sum();
 
-    // Clamp scroll_offset to valid range
-    // Maximum scroll is the number of lines that are hidden when viewing the bottom
-    let max_scroll = if total_lines > visible_height {
-        total_lines - visible_height
-    } else {
-        0
-    };
-    app.scroll_offset = app.scroll_offset.min(max_scroll);
-
     // Calculate actual scroll: skip lines from top to show the bottom minus scroll_offset
     // When scroll_offset = 0: show bottom (skip most lines)
     // When scroll_offset increases: show older (skip fewer lines)
+    // Note: scroll_offset is already clamped in the render() function
     let scroll_value = if total_lines > visible_height {
         total_lines
             .saturating_sub(visible_height)

@@ -80,13 +80,23 @@ impl App {
 
     pub fn scroll_up(&mut self) {
         // Scroll up by 3 lines for smoother scrolling
-        // The actual max will be clamped during rendering based on content size
         self.scroll_offset = self.scroll_offset.saturating_add(3);
     }
 
     pub fn scroll_down(&mut self) {
         // Scroll down by 3 lines for smoother scrolling
         self.scroll_offset = self.scroll_offset.saturating_sub(3);
+    }
+
+    /// Clamp scroll offset based on actual content dimensions
+    /// Call this before rendering to ensure scroll_offset is valid
+    pub fn clamp_scroll(&mut self, total_lines: usize, visible_height: usize) {
+        let max_scroll = if total_lines > visible_height {
+            total_lines - visible_height
+        } else {
+            0
+        };
+        self.scroll_offset = self.scroll_offset.min(max_scroll);
     }
 
     pub fn quit(&mut self) {
