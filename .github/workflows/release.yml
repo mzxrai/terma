@@ -39,6 +39,12 @@ jobs:
         run: cargo install cross --git https://github.com/cross-rs/cross
 
       - name: Build
+        env:
+          # TERMA_DEFAULT_HOST is compiled into the binary
+          # Update this to your production server hostname
+          # Example: TERMA_DEFAULT_HOST: terma.example.com:443
+          # If not set, defaults to localhost:3000 (for local development)
+          TERMA_DEFAULT_HOST: ${{ vars.TERMA_DEFAULT_HOST || '' }}
         run: |
           if [ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]; then
             cross build --release --target ${{ matrix.target }} --bin terma
