@@ -184,6 +184,21 @@ async fn handle_client_message(
                 return;
             }
 
+            // Validate message length
+            if content.len() > MAX_MESSAGE_LENGTH {
+                let rooms = state.rooms.read().await;
+                if let Some(room) = rooms.get(room_id) {
+                    let error_msg = ServerMessage::Error {
+                        message: format!(
+                            "Message too long. Maximum length is {} characters.",
+                            MAX_MESSAGE_LENGTH
+                        ),
+                    };
+                    room.send_to_user(user_id, Message::Text(error_msg.to_json().unwrap()));
+                }
+                return;
+            }
+
             let mut rooms = state.rooms.write().await;
             if let Some(room) = rooms.get_mut(room_id) {
                 let username = room.get_username(user_id).unwrap_or_else(|| "Unknown".to_string());
