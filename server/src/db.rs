@@ -1,10 +1,10 @@
 use anyhow::Result;
 use chrono::Utc;
-use sqlx::{Pool, Sqlite, SqlitePool};
+use sqlx::{Pool, Postgres, PgPool};
 use terma_shared::Room;
 
-pub async fn init_db(database_url: &str) -> Result<Pool<Sqlite>> {
-    let pool = SqlitePool::connect(database_url).await?;
+pub async fn init_db(database_url: &str) -> Result<Pool<Postgres>> {
+    let pool = PgPool::connect(database_url).await?;
 
     sqlx::migrate!("./migrations")
         .run(&pool)
@@ -13,13 +13,12 @@ pub async fn init_db(database_url: &str) -> Result<Pool<Sqlite>> {
     Ok(pool)
 }
 
-pub async fn create_room(pool: &Pool<Sqlite>, room_id: String) -> Result<Room> {
+pub async fn create_room(pool: &Pool<Postgres>, room_id: String) -> Result<Room> {
     let created_at = Utc::now();
-    let created_at_str = created_at.to_rfc3339();
 
-    sqlx::query("INSERT INTO rooms (id, created_at) VALUES (?, ?)")
+    sqlx::query("INSERT INTO rooms (id, created_at) VALUES ($1, $2)")
         .bind(&room_id)
-        .bind(&created_at_str)
+        .bind(created_at)
         .execute(pool)
         .await?;
 
@@ -29,9 +28,9 @@ pub async fn create_room(pool: &Pool<Sqlite>, room_id: String) -> Result<Room> {
     })
 }
 
-pub async fn room_exists(pool: &Pool<Sqlite>, room_id: &str) -> Result<bool> {
+pub async fn room_exists(pool: &Pool<Postgres>, room_id: &str) -> Result<bool> {
     let count = sqlx::query_scalar::<_, i64>(
-        "SELECT COUNT(*) FROM rooms WHERE id = ?"
+        "SELECT COUNT(*) FROM rooms WHERE id = $1"
     )
     .bind(room_id)
     .fetch_one(pool)

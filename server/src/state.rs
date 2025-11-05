@@ -1,5 +1,5 @@
 use axum::extract::ws::Message;
-use sqlx::{Pool, Sqlite};
+use sqlx::{Pool, Postgres};
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 use terma_shared::ChatMessage;
@@ -9,7 +9,7 @@ const MAX_MESSAGE_HISTORY: usize = 500;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub db: Pool<Sqlite>,
+    pub db: Pool<Postgres>,
     pub rooms: Arc<RwLock<HashMap<String, RoomState>>>,
 }
 
@@ -76,7 +76,7 @@ impl RoomState {
 }
 
 impl AppState {
-    pub fn new(db: Pool<Sqlite>) -> Self {
+    pub fn new(db: Pool<Postgres>) -> Self {
         Self {
             db,
             rooms: Arc::new(RwLock::new(HashMap::new())),
