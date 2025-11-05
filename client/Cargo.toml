@@ -20,5 +20,5 @@ uuid = "1.11"
 dirs = "5.0"
 
 [[bin]]
-name = "terma-client"
+name = "terma"
 path = "src/main.rs"
