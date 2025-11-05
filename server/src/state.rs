@@ -1,11 +1,11 @@
 use axum::extract::ws::Message;
 use sqlx::{Pool, Postgres};
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 use std::sync::Arc;
-use terma_shared::ChatMessage;
 use tokio::sync::{mpsc, RwLock};
 
-const MAX_MESSAGE_HISTORY: usize = 500;
+// Maximum messages per room (enforced by database trigger)
+const MAX_MESSAGE_HISTORY: usize = 1000;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -16,7 +16,6 @@ pub struct AppState {
 pub struct RoomState {
     pub connections: HashMap<String, mpsc::UnboundedSender<Message>>,
     pub usernames: HashMap<String, String>,
-    pub message_history: VecDeque<ChatMessage>,
 }
 
 impl RoomState {
@@ -24,19 +23,7 @@ impl RoomState {
         Self {
             connections: HashMap::new(),
             usernames: HashMap::new(),
-            message_history: VecDeque::with_capacity(MAX_MESSAGE_HISTORY),
         }
-    }
-
-    pub fn add_message(&mut self, message: ChatMessage) {
-        if self.message_history.len() >= MAX_MESSAGE_HISTORY {
-            self.message_history.pop_front();
-        }
-        self.message_history.push_back(message);
-    }
-
-    pub fn get_history(&self) -> Vec<ChatMessage> {
-        self.message_history.iter().cloned().collect()
     }
 
     pub fn online_count(&self) -> usize {
@@ -89,7 +76,6 @@ impl Clone for RoomState {
         Self {
             connections: HashMap::new(),
             usernames: self.usernames.clone(),
-            message_history: self.message_history.clone(),
         }
     }
 }
