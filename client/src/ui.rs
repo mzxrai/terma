@@ -1,5 +1,5 @@
 use ratatui::{
-    layout::{Constraint, Direction, Layout, Position, Rect},
+    layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
@@ -8,13 +8,13 @@ use ratatui::{
 
 use crate::app::App;
 
-pub fn render(frame: &mut Frame, app: &App) {
+pub fn render(frame: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(3),  // Header
             Constraint::Min(0),      // Messages
-            Constraint::Length(3),  // Input
+            Constraint::Min(3),     // Input (dynamic expansion)
         ])
         .split(frame.area());
 
@@ -106,21 +106,15 @@ fn render_messages(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(messages_widget, area);
 }
 
-fn render_input(frame: &mut Frame, app: &App, area: Rect) {
-    let input = Paragraph::new(app.input.as_str())
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::White))
-                .title(" Type a message (Ctrl+C to quit) "),
-        );
+fn render_input(frame: &mut Frame, app: &mut App, area: Rect) {
+    // Set textarea block styling
+    app.input.set_block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::White))
+            .title(" Type a message (Enter to send, Ctrl+C to quit) "),
+    );
 
-    frame.render_widget(input, area);
-
-    // Set cursor position to show where user is typing
-    // Position cursor at the end of the input text, accounting for the border
-    frame.set_cursor_position(Position::new(
-        area.x + app.input.len() as u16 + 1,
-        area.y + 1,
-    ));
+    // TextArea widget handles cursor positioning and multi-line rendering automatically
+    frame.render_widget(&app.input, area);
 }
