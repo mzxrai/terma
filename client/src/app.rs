@@ -1,4 +1,5 @@
 use chrono::{DateTime, Local, Utc};
+use ratatui::style::Style;
 use terma_shared::ChatMessage;
 use tui_textarea::TextArea;
 
