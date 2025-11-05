@@ -158,21 +158,28 @@ fn handle_server_message(app: &mut App, msg: ServerMessage) {
         ServerMessage::UserJoined {
             user_id,
             username,
+            timestamp,
             online_count,
-            ..
         } => {
             app.online_count = online_count;
             if user_id != app.user_id {
-                app.add_system_message(format!("{} joined. {} user(s) online.", username, online_count));
+                app.add_system_message_with_time(
+                    format!("{} joined. {} user(s) online.", username, online_count),
+                    timestamp,
+                );
             }
         }
         ServerMessage::UserLeft {
             username,
+            timestamp,
             online_count,
             ..
         } => {
             app.online_count = online_count;
-            app.add_system_message(format!("{} left. {} user(s) online.", username, online_count));
+            app.add_system_message_with_time(
+                format!("{} left. {} user(s) online.", username, online_count),
+                timestamp,
+            );
         }
         ServerMessage::Error { message } => {
             app.add_system_message(format!("Error: {}", message));
