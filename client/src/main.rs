@@ -1,4 +1,5 @@
 mod app;
+mod config;
 mod connection;
 mod events;
 mod ui;
@@ -32,11 +33,15 @@ async fn main() -> Result<()> {
     let host = &args[1];
     let room_id = &args[2];
 
+    // Get or prompt for username
+    let username = config::get_or_prompt_username()
+        .context("Failed to get username")?;
+
     // Generate a random user ID
     let user_id = Uuid::new_v4().to_string()[..8].to_string();
 
     // Connect to server
-    let (conn, mut rx) = connection::Connection::connect(host, room_id, user_id.clone())
+    let (conn, mut rx) = connection::Connection::connect(host, room_id, user_id.clone(), username.clone())
         .await
         .context("Failed to establish connection")?;
 
@@ -49,7 +54,7 @@ async fn main() -> Result<()> {
     terminal.show_cursor()?;
 
     // Create app
-    let mut app = App::new(room_id.to_string(), user_id);
+    let mut app = App::new(room_id.to_string(), user_id, username);
 
     // Run app
     let result = run_app(&mut terminal, &mut app, &conn, &mut rx).await;
@@ -135,21 +140,22 @@ fn handle_server_message(app: &mut App, msg: ServerMessage) {
         }
         ServerMessage::UserJoined {
             user_id,
+            username,
             online_count,
             ..
         } => {
             app.online_count = online_count;
             if user_id != app.user_id {
-                app.add_system_message(format!("{} joined. {} user(s) online.", user_id, online_count));
+                app.add_system_message(format!("{} joined. {} user(s) online.", username, online_count));
             }
         }
         ServerMessage::UserLeft {
-            user_id,
+            username,
             online_count,
             ..
         } => {
             app.online_count = online_count;
-            app.add_system_message(format!("{} left. {} user(s) online.", user_id, online_count));
+            app.add_system_message(format!("{} left. {} user(s) online.", username, online_count));
         }
         ServerMessage::Error { message } => {
             app.add_system_message(format!("Error: {}", message));
