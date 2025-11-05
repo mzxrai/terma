@@ -73,6 +73,17 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -R binaries
 
+      - name: Verify binaries are not zipped
+        run: |
+          for file in binaries/*/terma-client-*; do
+            echo "Checking $file"
+            file $file
+            if file $file | grep -q "Zip archive"; then
+              echo "ERROR: $file is a zip archive!"
+              exit 1
+            fi
+          done
+
       - name: Create/Update Release
         uses: softprops/action-gh-release@v1
         with:
