@@ -44,11 +44,11 @@ async fn handle_socket(socket: WebSocket, room_id: String, state: AppState) {
     let (tx, mut rx) = mpsc::unbounded_channel::<Message>();
 
     // Wait for Join message
-    let user_id = loop {
+    let (user_id, username) = loop {
         match receiver.next().await {
             Some(Ok(Message::Text(text))) => {
-                if let Ok(ClientMessage::Join { user_id }) = ClientMessage::from_json(&text) {
-                    break user_id;
+                if let Ok(ClientMessage::Join { user_id, username }) = ClientMessage::from_json(&text) {
+                    break (user_id, username);
                 }
             }
             Some(Ok(Message::Close(_))) | None => return,
@@ -64,7 +64,7 @@ async fn handle_socket(socket: WebSocket, room_id: String, state: AppState) {
         .entry(room_id.clone())
         .or_insert_with(crate::state::RoomState::new);
 
-    room.add_connection(user_id.clone(), tx);
+    room.add_connection(user_id.clone(), username.clone(), tx);
 
     // Send welcome message with history
     let history = room.get_history();
@@ -97,6 +97,7 @@ async fn handle_socket(socket: WebSocket, room_id: String, state: AppState) {
         let online_count = room.online_count();
         let joined_msg = ServerMessage::UserJoined {
             user_id: user_id.clone(),
+            username: username.clone(),
             timestamp: Utc::now(),
             online_count,
         };
@@ -149,16 +150,18 @@ async fn handle_socket(socket: WebSocket, room_id: String, state: AppState) {
 
     let mut rooms = state.rooms.write().await;
     if let Some(room) = rooms.get_mut(&room_id) {
-        room.remove_connection(&user_id);
-        let online_count = room.online_count();
+        if let Some(username) = room.remove_connection(&user_id) {
+            let online_count = room.online_count();
 
-        let left_msg = ServerMessage::UserLeft {
-            user_id: user_id.clone(),
-            timestamp: Utc::now(),
-            online_count,
-        };
+            let left_msg = ServerMessage::UserLeft {
+                user_id: user_id.clone(),
+                username,
+                timestamp: Utc::now(),
+                online_count,
+            };
 
-        room.broadcast(Message::Text(left_msg.to_json().unwrap()), None);
+            room.broadcast(Message::Text(left_msg.to_json().unwrap()), None);
+        }
 
         // Clean up empty rooms
         if room.connections.is_empty() {
@@ -179,14 +182,17 @@ async fn handle_client_message(
                 return;
             }
 
-            let chat_msg = ChatMessage::new(
-                room_id.to_string(),
-                user_id.to_string(),
-                content,
-            );
-
             let mut rooms = state.rooms.write().await;
             if let Some(room) = rooms.get_mut(room_id) {
+                let username = room.get_username(user_id).unwrap_or_else(|| "Unknown".to_string());
+
+                let chat_msg = ChatMessage::new(
+                    room_id.to_string(),
+                    user_id.to_string(),
+                    username,
+                    content,
+                );
+
                 room.add_message(chat_msg.clone());
 
                 let server_msg = ServerMessage::Message {
