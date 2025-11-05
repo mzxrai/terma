@@ -15,6 +15,7 @@ pub struct AppState {
 
 pub struct RoomState {
     pub connections: HashMap<String, mpsc::UnboundedSender<Message>>,
+    pub usernames: HashMap<String, String>,
     pub message_history: VecDeque<ChatMessage>,
 }
 
@@ -22,6 +23,7 @@ impl RoomState {
     pub fn new() -> Self {
         Self {
             connections: HashMap::new(),
+            usernames: HashMap::new(),
             message_history: VecDeque::with_capacity(MAX_MESSAGE_HISTORY),
         }
     }
@@ -41,12 +43,18 @@ impl RoomState {
         self.connections.len()
     }
 
-    pub fn add_connection(&mut self, user_id: String, tx: mpsc::UnboundedSender<Message>) {
-        self.connections.insert(user_id, tx);
+    pub fn add_connection(&mut self, user_id: String, username: String, tx: mpsc::UnboundedSender<Message>) {
+        self.connections.insert(user_id.clone(), tx);
+        self.usernames.insert(user_id, username);
     }
 
-    pub fn remove_connection(&mut self, user_id: &str) -> bool {
-        self.connections.remove(user_id).is_some()
+    pub fn remove_connection(&mut self, user_id: &str) -> Option<String> {
+        self.connections.remove(user_id)?;
+        self.usernames.remove(user_id)
+    }
+
+    pub fn get_username(&self, user_id: &str) -> Option<String> {
+        self.usernames.get(user_id).cloned()
     }
 
     pub fn broadcast(&self, message: Message, exclude_user: Option<&str>) {
@@ -80,6 +88,7 @@ impl Clone for RoomState {
     fn clone(&self) -> Self {
         Self {
             connections: HashMap::new(),
+            usernames: self.usernames.clone(),
             message_history: self.message_history.clone(),
         }
     }
