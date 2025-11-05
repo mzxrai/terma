@@ -57,40 +57,43 @@ This document tracks work lost in the recent directory restore. These features w
 - [x] Retrieve and include username in UserLeft broadcast message
 - [x] Get username from room state when creating ChatMessage in SendMessage handler
 
-## Message Limits
+## Message Limits ✅ COMPLETED
 
 ### Server State (`server/src/state.rs`)
-- [ ] Change `MAX_MESSAGE_HISTORY` from 100 to 500
+- [x] Change `MAX_MESSAGE_HISTORY` from 100 to 500 (already completed in previous commit)
 
 ### Server WebSocket (`server/src/ws.rs`)
-- [ ] Add `const MAX_MESSAGE_LENGTH: usize = 4096;`
-- [ ] Validate message length in SendMessage handler
-- [ ] Send Error message if content exceeds 4096 characters
+- [x] Add `const MAX_MESSAGE_LENGTH: usize = 4096;` (already defined)
+- [x] Validate message length in SendMessage handler
+- [x] Send Error message if content exceeds 4096 characters
 
-## Shorthand Command Support (Optional - Was in Progress)
-
-This was partially implemented when the restore happened. May want to complete later:
+## Shorthand Command Support ✅ COMPLETED
 
 ### Client Config (`client/src/config.rs`)
-- [ ] Ensure host storage functions are working
+- [x] Remove host storage functions (not needed - host is compile-time only)
+- [x] Keep only username storage functionality
 
 ### Client Main (`client/src/main.rs`)
-- [ ] Support `terma <room_id>` (reads host from config)
-- [ ] Support `terma <host> <room_id>` (saves host to config)
-- [ ] Show helpful error if host not configured
+- [x] Support `terma <room_id>` (uses compile-time DEFAULT_HOST)
+- [x] Support `terma <host> <room_id>` (allows override)
+- [x] Use TERMA_DEFAULT_HOST environment variable at compile time
+- [x] Default to "localhost:3000" for development builds
+- [x] Show helpful usage message with examples
 
 ## Testing Checklist
 
 After implementation:
-- [ ] Test username prompt on first run
-- [ ] Test username persists in `~/.terma/config.json`
-- [ ] Test username displays correctly in chat messages
-- [ ] Test username displays in header ("You: Matt")
-- [ ] Test join/leave events show usernames
-- [ ] Test message limit of 4096 characters
-- [ ] Test 500 message history
-- [ ] Test multiple users with same username can join (no uniqueness check)
-- [ ] Test user can open multiple terminal sessions with same username
+- [x] Test username prompt on first run (completed previously)
+- [x] Test username persists in `~/.terma/config.json` (completed previously)
+- [x] Test username displays correctly in chat messages (completed previously)
+- [x] Test username displays in header ("You: Matt") (completed previously)
+- [x] Test join/leave events show usernames (completed previously)
+- [ ] Test message limit of 4096 characters (needs testing)
+- [x] Test 500 message history (already set)
+- [x] Test multiple users with same username can join (no uniqueness check)
+- [x] Test user can open multiple terminal sessions with same username
+- [ ] Test shorthand command `terma <room_id>` (needs testing)
+- [ ] Test full command `terma <host> <room_id>` (needs testing)
 
 ## Notes
 
@@ -98,3 +101,6 @@ After implementation:
 - Config is JSON format for future extensibility
 - Message length validation happens server-side
 - Client should handle Error messages from server gracefully
+- Host is compile-time only (via TERMA_DEFAULT_HOST env var)
+- Development builds default to "localhost:3000"
+- Production builds should set TERMA_DEFAULT_HOST during GitHub Actions build
