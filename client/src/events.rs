@@ -1,19 +1,39 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use tui_textarea::Input;
+use crossterm::event::KeyEvent;
+use tui_textarea::{Input, Key};
 
 pub fn handle_key_event(app: &mut crate::app::App, key: KeyEvent) -> Option<String> {
-    match key.code {
-        KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+    // Convert crossterm KeyEvent to tui_textarea Input first
+    let input = Input::from(key);
+
+    // Match on the tui_textarea Input struct to properly detect Shift+Enter
+    match input {
+        // Ctrl+C: quit application
+        Input {
+            key: Key::Char('c'),
+            ctrl: true,
+            ..
+        } => {
             app.quit();
             None
         }
-        KeyCode::Enter if key.modifiers.contains(KeyModifiers::SHIFT) => {
-            // Shift+Enter: insert new line
+        // Shift+Enter: insert newline (multi-line message)
+        Input {
+            key: Key::Enter,
+            shift: true,
+            ..
+        } => {
             app.input.insert_newline();
             None
         }
-        KeyCode::Enter => {
-            // Enter without Shift: send message
+        // Plain Enter or Ctrl+M: send message
+        Input {
+            key: Key::Enter, ..
+        }
+        | Input {
+            key: Key::Char('m'),
+            ctrl: true,
+            ..
+        } => {
             let message = app.input_take();
             if !message.trim().is_empty() {
                 Some(message)
@@ -21,19 +41,27 @@ pub fn handle_key_event(app: &mut crate::app::App, key: KeyEvent) -> Option<Stri
                 None
             }
         }
-        KeyCode::Up if key.modifiers.contains(KeyModifiers::ALT) => {
-            // Alt+Up: scroll messages up
+        // Alt+Up: scroll messages up
+        Input {
+            key: Key::Up,
+            alt: true,
+            ..
+        } => {
             app.scroll_up();
             None
         }
-        KeyCode::Down if key.modifiers.contains(KeyModifiers::ALT) => {
-            // Alt+Down: scroll messages down
+        // Alt+Down: scroll messages down
+        Input {
+            key: Key::Down,
+            alt: true,
+            ..
+        } => {
             app.scroll_down();
             None
         }
-        _ => {
-            // Forward all other keys to TextArea for handling
-            app.input.input(Input::from(key));
+        // Forward all other inputs to TextArea for normal editing
+        input => {
+            app.input.input(input);
             None
         }
     }
