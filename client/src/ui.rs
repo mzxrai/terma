@@ -2,7 +2,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, Paragraph, Wrap},
     Frame,
 };
 
@@ -62,16 +62,10 @@ fn render_header(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn render_messages(frame: &mut Frame, app: &App, area: Rect) {
-    // Calculate maximum width for messages (accounting for borders)
-    let max_width = area.width.saturating_sub(2) as usize;
-
+    // Build all messages without truncation
     let messages: Vec<Line> = app
         .messages
         .iter()
-        .rev()
-        .skip(app.scroll_offset)
-        .take(area.height.saturating_sub(2) as usize)
-        .rev()
         .map(|msg| {
             let style = if msg.is_system {
                 Style::default()
@@ -83,15 +77,8 @@ fn render_messages(frame: &mut Frame, app: &App, area: Rect) {
                 Style::default().fg(Color::White)
             };
 
-            // Truncate message if it's too long
-            let formatted = msg.format_for_display();
-            let truncated = if formatted.len() > max_width {
-                format!("{}…", &formatted[..max_width.saturating_sub(1)])
-            } else {
-                formatted
-            };
-
-            Line::from(Span::styled(truncated, style))
+            // No truncation - let Paragraph wrap the text
+            Line::from(Span::styled(msg.format_for_display(), style))
         })
         .collect();
 
@@ -100,8 +87,10 @@ fn render_messages(frame: &mut Frame, app: &App, area: Rect) {
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(Color::White))
-                .title(" Messages "),
-        );
+                .title(" Messages (Alt+↑/↓ to scroll) "),
+        )
+        .wrap(Wrap { trim: true })
+        .scroll((app.scroll_offset as u16, 0));
 
     frame.render_widget(messages_widget, area);
 }
