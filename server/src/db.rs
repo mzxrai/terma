@@ -71,7 +71,7 @@ pub async fn get_message_history(pool: &Pool<Postgres>, room_id: &str) -> Result
     Ok(messages
         .into_iter()
         .map(|(room_id, user_id, username, content, timestamp)| ChatMessage {
-            id: Uuid::new_v4().to_string(),
+            id: Uuid::new_v4(),
             room_id,
             user_id,
             username,
