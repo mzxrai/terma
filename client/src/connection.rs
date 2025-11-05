@@ -13,6 +13,7 @@ impl Connection {
         host: &str,
         room_id: &str,
         user_id: String,
+        username: String,
     ) -> Result<(Self, mpsc::UnboundedReceiver<ServerMessage>)> {
         let url = if host.starts_with("localhost") || host.starts_with("127.0.0.1") {
             format!("ws://{}/ws/{}", host, room_id)
@@ -27,7 +28,7 @@ impl Connection {
         let (mut write, mut read) = ws_stream.split();
 
         // Send Join message immediately
-        let join_msg = ClientMessage::Join { user_id };
+        let join_msg = ClientMessage::Join { user_id, username };
         let join_json = join_msg.to_json()?;
         write.send(Message::Text(join_json)).await?;
 
