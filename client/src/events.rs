@@ -16,10 +16,16 @@ pub fn handle_key_event(app: &mut crate::app::App, key: KeyEvent) -> Option<Stri
             app.quit();
             None
         }
-        // Shift+Enter: insert newline (multi-line message)
+        // Shift+Enter or Ctrl+J: insert newline (multi-line message)
+        // Note: Many terminals send Shift+Enter as Ctrl+J
         Input {
             key: Key::Enter,
             shift: true,
+            ..
+        }
+        | Input {
+            key: Key::Char('j'),
+            ctrl: true,
             ..
         } => {
             app.input.insert_newline();
