@@ -80,10 +80,8 @@ impl App {
 
     pub fn scroll_up(&mut self) {
         // Scroll up by 3 lines for smoother scrolling
-        let max_scroll = self.messages.len().saturating_mul(10);
-        if self.scroll_offset < max_scroll {
-            self.scroll_offset = (self.scroll_offset + 3).min(max_scroll);
-        }
+        // The actual max will be clamped during rendering based on content size
+        self.scroll_offset = self.scroll_offset.saturating_add(3);
     }
 
     pub fn scroll_down(&mut self) {

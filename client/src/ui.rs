@@ -61,7 +61,7 @@ fn render_header(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(header, area);
 }
 
-fn render_messages(frame: &mut Frame, app: &App, area: Rect) {
+fn render_messages(frame: &mut Frame, app: &mut App, area: Rect) {
     // Build all messages without truncation
     let messages: Vec<Line> = app
         .messages
@@ -103,6 +103,15 @@ fn render_messages(frame: &mut Frame, app: &App, area: Rect) {
             }
         })
         .sum();
+
+    // Clamp scroll_offset to valid range
+    // Maximum scroll is the number of lines that are hidden when viewing the bottom
+    let max_scroll = if total_lines > visible_height {
+        total_lines - visible_height
+    } else {
+        0
+    };
+    app.scroll_offset = app.scroll_offset.min(max_scroll);
 
     // Calculate actual scroll: skip lines from top to show the bottom minus scroll_offset
     // When scroll_offset = 0: show bottom (skip most lines)
