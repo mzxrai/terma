@@ -75,6 +75,7 @@ pub fn get_or_prompt_username() -> Result<String> {
     }
 }
 
+#[allow(dead_code)]
 pub fn save_host(host: String) -> Result<()> {
     let mut config = Config::load().unwrap_or_else(|_| Config {
         username: String::new(),
@@ -86,6 +87,7 @@ pub fn save_host(host: String) -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 pub fn get_host() -> Result<String> {
     let config = Config::load()?;
     config.host.ok_or_else(|| anyhow::anyhow!("No host configured"))
