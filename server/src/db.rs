@@ -1,7 +1,8 @@
 use anyhow::Result;
 use chrono::Utc;
 use sqlx::{Pool, Postgres, PgPool};
-use terma_shared::Room;
+use terma_shared::{ChatMessage, Room};
+use uuid::Uuid;
 
 pub async fn init_db(database_url: &str) -> Result<Pool<Postgres>> {
     let pool = PgPool::connect(database_url).await?;
@@ -37,4 +38,45 @@ pub async fn room_exists(pool: &Pool<Postgres>, room_id: &str) -> Result<bool> {
     .await?;
 
     Ok(count > 0)
+}
+
+pub async fn save_message(pool: &Pool<Postgres>, msg: &ChatMessage) -> Result<()> {
+    sqlx::query(
+        "INSERT INTO messages (room_id, user_id, username, content, timestamp)
+         VALUES ($1, $2, $3, $4, $5)"
+    )
+    .bind(&msg.room_id)
+    .bind(&msg.user_id)
+    .bind(&msg.username)
+    .bind(&msg.content)
+    .bind(msg.timestamp)
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+pub async fn get_message_history(pool: &Pool<Postgres>, room_id: &str) -> Result<Vec<ChatMessage>> {
+    let messages = sqlx::query_as::<_, (String, String, String, String, chrono::DateTime<Utc>)>(
+        "SELECT room_id, user_id, username, content, timestamp
+         FROM messages
+         WHERE room_id = $1
+         ORDER BY timestamp ASC
+         LIMIT 1000"
+    )
+    .bind(room_id)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(messages
+        .into_iter()
+        .map(|(room_id, user_id, username, content, timestamp)| ChatMessage {
+            id: Uuid::new_v4().to_string(),
+            room_id,
+            user_id,
+            username,
+            content,
+            timestamp,
+        })
+        .collect())
 }
