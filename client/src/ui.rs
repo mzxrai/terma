@@ -86,16 +86,29 @@ fn render_messages(frame: &mut Frame, app: &App, area: Rect) {
     // scroll_offset = 0 means "at bottom" (newest messages visible)
     // scroll_offset > 0 means "scrolled N lines back from bottom"
     let visible_height = area.height.saturating_sub(2) as usize; // Subtract borders
+    let available_width = area.width.saturating_sub(2) as usize; // Subtract borders
 
-    // Estimate total lines (messages * avg 2 lines each due to wrapping)
-    // This is approximate but works well enough
-    let estimated_total_lines = app.messages.len().saturating_mul(2);
+    // Calculate actual total lines by summing wrapped line counts for each message
+    let total_lines: usize = app
+        .messages
+        .iter()
+        .map(|msg| {
+            let formatted = msg.format_for_display();
+            // Calculate how many lines this message takes when wrapped
+            // Each line can fit available_width characters
+            if available_width == 0 {
+                1
+            } else {
+                ((formatted.len() + available_width - 1) / available_width).max(1)
+            }
+        })
+        .sum();
 
     // Calculate actual scroll: skip lines from top to show the bottom minus scroll_offset
     // When scroll_offset = 0: show bottom (skip most lines)
     // When scroll_offset increases: show older (skip fewer lines)
-    let scroll_value = if estimated_total_lines > visible_height {
-        estimated_total_lines
+    let scroll_value = if total_lines > visible_height {
+        total_lines
             .saturating_sub(visible_height)
             .saturating_sub(app.scroll_offset)
     } else {

@@ -79,16 +79,16 @@ impl App {
     }
 
     pub fn scroll_up(&mut self) {
-        // Scroll up by 1 line (conservative max: 10x message count for wrapped lines)
+        // Scroll up by 3 lines for smoother scrolling
         let max_scroll = self.messages.len().saturating_mul(10);
         if self.scroll_offset < max_scroll {
-            self.scroll_offset += 1;
+            self.scroll_offset = (self.scroll_offset + 3).min(max_scroll);
         }
     }
 
     pub fn scroll_down(&mut self) {
-        // Scroll down by 1 line
-        self.scroll_offset = self.scroll_offset.saturating_sub(1);
+        // Scroll down by 3 lines for smoother scrolling
+        self.scroll_offset = self.scroll_offset.saturating_sub(3);
     }
 
     pub fn quit(&mut self) {
