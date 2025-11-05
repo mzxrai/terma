@@ -74,9 +74,21 @@ terma/
 
 ## Running the Application
 
-### Start the Server
+### Development Mode (Recommended)
+
+**Start both server and client watchers:**
 ```bash
-cargo run --release --bin terma-server
+npm run dev
+```
+
+This runs both:
+- **Server watcher**: Auto-restarts server on code changes
+- **Client watcher**: Auto-rebuilds client binary on code changes
+
+**Individual watchers:**
+```bash
+npm run dev:server    # Server only
+npm run dev:client    # Client only
 ```
 
 The server will:
@@ -84,6 +96,21 @@ The server will:
 - Start web server on `http://localhost:3000`
 - Serve the web UI for creating rooms
 - Handle WebSocket connections for chat
+- Auto-restart when server code changes
+
+### Production Build
+
+**Build everything:**
+```bash
+npm run build
+# or
+cargo build --release
+```
+
+**Run server manually:**
+```bash
+cargo run --release --bin terma-server
+```
 
 ### Environment Variables
 - `DATABASE_URL`: PostgreSQL connection string (default: `postgres://localhost/terma`)
@@ -92,8 +119,10 @@ The server will:
 
 ### Connect a Client
 ```bash
-cargo run --release --bin terma-client -- localhost:3000 <room_id>
+cargo run --release --bin terma -- localhost:3000 <room_id>
 ```
+
+**Note:** The client binary will be auto-rebuilt by the watcher when using `npm run dev`.
 
 ## Installation Flow
 1. User visits web interface at http://localhost:3000
