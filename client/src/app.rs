@@ -9,7 +9,7 @@ pub struct App {
     pub messages: Vec<DisplayMessage>,
     pub input: TextArea<'static>,
     pub online_count: usize,
-    pub scroll_offset: usize,
+    pub scroll_offset: usize,  // Lines scrolled back from bottom (0 = at bottom)
     pub connected: bool,
     pub should_quit: bool,
 }

@@ -82,21 +82,24 @@ fn render_messages(frame: &mut Frame, app: &App, area: Rect) {
         })
         .collect();
 
-    // Calculate scroll: scroll_offset = 0 means show bottom (newest messages)
-    // scroll_offset > 0 means scroll up from bottom by that many lines
-    // We use a large number to ensure we're at the bottom when scroll_offset = 0
-    let total_message_count = messages.len();
+    // Calculate scroll position
+    // scroll_offset = 0 means "at bottom" (newest messages visible)
+    // scroll_offset > 0 means "scrolled N lines back from bottom"
     let visible_height = area.height.saturating_sub(2) as usize; // Subtract borders
 
-    // Estimate total lines (rough approximation: each message might wrap)
-    // Use a conservative multiplier for wrapped lines
-    let estimated_total_lines = total_message_count.saturating_mul(3);
+    // Estimate total lines (messages * avg 2 lines each due to wrapping)
+    // This is approximate but works well enough
+    let estimated_total_lines = app.messages.len().saturating_mul(2);
 
-    // Calculate actual scroll: if at bottom (offset=0), scroll to show end
-    let actual_scroll = if estimated_total_lines > visible_height {
-        estimated_total_lines.saturating_sub(visible_height).saturating_sub(app.scroll_offset)
+    // Calculate actual scroll: skip lines from top to show the bottom minus scroll_offset
+    // When scroll_offset = 0: show bottom (skip most lines)
+    // When scroll_offset increases: show older (skip fewer lines)
+    let scroll_value = if estimated_total_lines > visible_height {
+        estimated_total_lines
+            .saturating_sub(visible_height)
+            .saturating_sub(app.scroll_offset)
     } else {
-        0  // All messages fit, no scrolling needed
+        0  // All content fits, no scrolling needed
     };
 
     let messages_widget = Paragraph::new(messages)
@@ -107,7 +110,7 @@ fn render_messages(frame: &mut Frame, app: &App, area: Rect) {
                 .title(" Messages (Alt+↑/↓ or scroll wheel) "),
         )
         .wrap(Wrap { trim: true })
-        .scroll((actual_scroll as u16, 0));
+        .scroll((scroll_value as u16, 0));
 
     frame.render_widget(messages_widget, area);
 }
