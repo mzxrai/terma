@@ -5,9 +5,14 @@ Terma is a real-time terminal chat application built with Rust, Ratatui, and Axu
 
 ## Architecture
 - **Cargo Workspace** with 3 crates: `server`, `client`, `shared`
-- **Server (Axum)**: Web UI + WebSocket server + SQLite for persistent rooms
+- **Server (Axum)**: Web UI + WebSocket server + PostgreSQL for persistent rooms and messages
 - **Client (Ratatui)**: Terminal UI connecting via WebSocket
 - **Shared**: Common protocol types and message structures
+
+## Development Instructions
+
+- Make a git commit after every file change. This is really important.
+- If you ever need to understand what's been done previously, simply check the git commit history.
 
 ## Development Principles
 
@@ -23,7 +28,7 @@ Terma is a real-time terminal chat application built with Rust, Ratatui, and Axu
 - **No shortcuts permitted**: Make this properly, following best practices
 
 ### Dependencies
-- **Database**: Use SQLite (no Postgres)
+- **Database**: Use PostgreSQL for persistent storage
 - **Infrastructure**: Use the simplest possible thing that will work
 - **Rust & Ratatui**: Required for terminal portion
 - **Rust & Axum**: Preferred for webapp/server
@@ -32,7 +37,7 @@ Terma is a real-time terminal chat application built with Rust, Ratatui, and Axu
 - Persistent rooms (survive server restart)
 - Real-time messaging via WebSocket
 - Presence indicators (join/leave events)
-- Limited message history (last 100 messages in memory)
+- Persistent message history (last 1000 messages per room in database)
 - Anonymous access (link-based, no authentication)
 - One-liner installation via curl script
 - Cross-NAT functionality (works over internet, not just local network)
@@ -75,13 +80,13 @@ cargo run --release --bin terma-server
 ```
 
 The server will:
-- Initialize SQLite database at `terma.db`
+- Initialize PostgreSQL database and run migrations
 - Start web server on `http://localhost:3000`
 - Serve the web UI for creating rooms
 - Handle WebSocket connections for chat
 
 ### Environment Variables
-- `DATABASE_URL`: SQLite connection string (default: `sqlite:terma.db`)
+- `DATABASE_URL`: PostgreSQL connection string (default: `postgres://localhost/terma`)
 - `BIND_ADDR`: Server bind address (default: `0.0.0.0:3000`)
 - `HOST`: Public hostname for install commands (default: `localhost:3000`)
 
@@ -108,7 +113,7 @@ WebSocket messages use JSON with a `type` field:
 
 ### Server → Client
 - `Welcome`: Connection confirmation with online count
-- `History`: Recent messages (up to 100)
+- `History`: Recent messages (up to 1000)
 - `Message`: New chat message
 - `UserJoined`: User joined notification
 - `UserLeft`: User left notification
@@ -119,8 +124,40 @@ WebSocket messages use JSON with a `type` field:
 ```sql
 CREATE TABLE rooms (
     id TEXT PRIMARY KEY,
-    created_at TEXT NOT NULL
+    created_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE TABLE messages (
+    id BIGSERIAL PRIMARY KEY,
+    room_id TEXT NOT NULL REFERENCES rooms(id),
+    user_id TEXT NOT NULL,
+    username TEXT NOT NULL,
+    content TEXT NOT NULL,
+    timestamp TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_messages_room_timestamp ON messages(room_id, timestamp DESC);
+
+-- Trigger to enforce 1000 message limit per room
+CREATE OR REPLACE FUNCTION enforce_message_limit()
+RETURNS TRIGGER AS $$
+BEGIN
+    DELETE FROM messages
+    WHERE id IN (
+        SELECT id FROM messages
+        WHERE room_id = NEW.room_id
+        ORDER BY timestamp DESC
+        OFFSET 1000
+    );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER enforce_room_message_limit
+    AFTER INSERT ON messages
+    FOR EACH ROW
+    EXECUTE FUNCTION enforce_message_limit();
 ```
 
-Rooms are persistent across server restarts, but messages are ephemeral (kept in memory only, last 100 messages per room).
+Both rooms and messages are persistent across server restarts. Each room automatically maintains the last 1000 messages via a database trigger.
