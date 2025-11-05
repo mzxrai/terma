@@ -45,7 +45,7 @@ fn render_header(frame: &mut Frame, app: &App, area: Rect) {
         ),
         Span::raw(" | "),
         Span::styled(
-            format!("You: {}", app.user_id),
+            format!("You: {}", app.username),
             Style::default().fg(Color::Cyan),
         ),
     ];
@@ -74,7 +74,7 @@ fn render_messages(frame: &mut Frame, app: &App, area: Rect) {
                 Style::default()
                     .fg(Color::Yellow)
                     .add_modifier(Modifier::ITALIC)
-            } else if msg.user_id == app.user_id {
+            } else if msg.is_own_message {
                 Style::default().fg(Color::Cyan)
             } else {
                 Style::default().fg(Color::White)
