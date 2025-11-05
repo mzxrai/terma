@@ -62,6 +62,9 @@ fn render_header(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn render_messages(frame: &mut Frame, app: &App, area: Rect) {
+    // Calculate maximum width for messages (accounting for borders)
+    let max_width = area.width.saturating_sub(2) as usize;
+
     let messages: Vec<Line> = app
         .messages
         .iter()
@@ -80,7 +83,15 @@ fn render_messages(frame: &mut Frame, app: &App, area: Rect) {
                 Style::default().fg(Color::White)
             };
 
-            Line::from(Span::styled(msg.format_for_display(), style))
+            // Truncate message if it's too long
+            let formatted = msg.format_for_display();
+            let truncated = if formatted.len() > max_width {
+                format!("{}…", &formatted[..max_width.saturating_sub(1)])
+            } else {
+                formatted
+            };
+
+            Line::from(Span::styled(truncated, style))
         })
         .collect();
 
@@ -90,8 +101,7 @@ fn render_messages(frame: &mut Frame, app: &App, area: Rect) {
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(Color::White))
                 .title(" Messages "),
-        )
-        .wrap(Wrap { trim: false });
+        );
 
     frame.render_widget(messages_widget, area);
 }
