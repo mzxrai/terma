@@ -1,0 +1,16 @@
+{
+  "name": "terma",
+  "version": "0.1.0",
+  "description": "Terminal chat application",
+  "scripts": {
+    "dev": "concurrently \"cargo watch -x 'run --bin terma-server'\" \"cargo watch -x 'build --release --bin terma'\"",
+    "dev:server": "cargo watch -x 'run --bin terma-server'",
+    "dev:client": "cargo watch -x 'build --release --bin terma'",
+    "build": "cargo build --release",
+    "build:server": "cargo build --release --bin terma-server",
+    "build:client": "cargo build --release --bin terma"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
