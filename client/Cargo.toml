@@ -12,6 +12,7 @@ serde_json.workspace = true
 anyhow.workspace = true
 
 ratatui = "0.29"
+tui-textarea = "0.7"
 crossterm = "0.28"
 tokio-tungstenite = { version = "0.24", features = ["rustls-tls-native-roots"] }
 futures = "0.3"
