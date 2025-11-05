@@ -7,7 +7,7 @@ mod ui;
 use anyhow::{Context, Result};
 use app::App;
 use crossterm::{
-    event::{self, Event},
+    event::{self, Event, MouseEventKind, EnableMouseCapture, DisableMouseCapture, EnableBracketedPaste, DisableBracketedPaste},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -65,7 +65,7 @@ async fn main() -> Result<()> {
     // Setup terminal
     enable_raw_mode().context("Failed to enable raw mode. Make sure you're running in a terminal (not via pipe or redirect).")?;
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture, EnableBracketedPaste)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
     terminal.show_cursor()?;
@@ -78,7 +78,7 @@ async fn main() -> Result<()> {
 
     // Restore terminal
     disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen, DisableMouseCapture, DisableBracketedPaste)?;
     terminal.show_cursor()?;
 
     if let Err(e) = result {
@@ -104,12 +104,22 @@ async fn run_app(
             break;
         }
 
-        // Check for keyboard events (non-blocking with short timeout)
+        // Check for keyboard and mouse events (non-blocking with short timeout)
         if event::poll(Duration::from_millis(50))? {
-            if let Event::Key(key) = event::read()? {
-                if let Some(message) = events::handle_key_event(app, key) {
-                    conn.send(ClientMessage::SendMessage { content: message })?;
+            match event::read()? {
+                Event::Key(key) => {
+                    if let Some(message) = events::handle_key_event(app, key) {
+                        conn.send(ClientMessage::SendMessage { content: message })?;
+                    }
                 }
+                Event::Mouse(mouse) => {
+                    handle_mouse_event(app, mouse);
+                }
+                Event::Paste(text) => {
+                    // Handle pasted text - insert it into the textarea without triggering sends
+                    handle_paste_event(app, text);
+                }
+                _ => {}
             }
         }
 
@@ -132,6 +142,26 @@ async fn run_app(
     }
 
     Ok(())
+}
+
+fn handle_mouse_event(app: &mut App, mouse: crossterm::event::MouseEvent) {
+    match mouse.kind {
+        MouseEventKind::ScrollUp => {
+            // Scroll up in message history (increase offset to show older messages)
+            app.scroll_up();
+        }
+        MouseEventKind::ScrollDown => {
+            // Scroll down in message history (decrease offset to show newer messages)
+            app.scroll_down();
+        }
+        _ => {}
+    }
+}
+
+fn handle_paste_event(app: &mut App, text: String) {
+    // Insert pasted text into the textarea
+    // TextArea will handle newlines properly without triggering sends
+    app.input.insert_str(text);
 }
 
 fn handle_server_message(app: &mut App, msg: ServerMessage) {

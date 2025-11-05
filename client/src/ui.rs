@@ -82,15 +82,32 @@ fn render_messages(frame: &mut Frame, app: &App, area: Rect) {
         })
         .collect();
 
+    // Calculate scroll: scroll_offset = 0 means show bottom (newest messages)
+    // scroll_offset > 0 means scroll up from bottom by that many lines
+    // We use a large number to ensure we're at the bottom when scroll_offset = 0
+    let total_message_count = messages.len();
+    let visible_height = area.height.saturating_sub(2) as usize; // Subtract borders
+
+    // Estimate total lines (rough approximation: each message might wrap)
+    // Use a conservative multiplier for wrapped lines
+    let estimated_total_lines = total_message_count.saturating_mul(3);
+
+    // Calculate actual scroll: if at bottom (offset=0), scroll to show end
+    let actual_scroll = if estimated_total_lines > visible_height {
+        estimated_total_lines.saturating_sub(visible_height).saturating_sub(app.scroll_offset)
+    } else {
+        0  // All messages fit, no scrolling needed
+    };
+
     let messages_widget = Paragraph::new(messages)
         .block(
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(Color::White))
-                .title(" Messages (Alt+↑/↓ to scroll) "),
+                .title(" Messages (Alt+↑/↓ or scroll wheel) "),
         )
         .wrap(Wrap { trim: true })
-        .scroll((app.scroll_offset as u16, 0));
+        .scroll((actual_scroll as u16, 0));
 
     frame.render_widget(messages_widget, area);
 }
