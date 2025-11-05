@@ -20,8 +20,8 @@ BEGIN
     WHERE id IN (
         SELECT id FROM messages
         WHERE room_id = NEW.room_id
-        ORDER BY timestamp ASC
-        OFFSET 1000
+        ORDER BY timestamp DESC
+        LIMIT -1 OFFSET 1000
     );
     RETURN NEW;
 END;
