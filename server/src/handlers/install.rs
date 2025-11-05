@@ -52,11 +52,21 @@ mv "$TEMP_FILE" "$BINARY_PATH"
 
 echo ""
 echo "✓ Terma client installed to $BINARY_PATH"
+echo ""
+
+# Check if ~/.local/bin is in PATH
+if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
+    echo "Note: Add $INSTALL_DIR to your PATH to run 'terma-client' from anywhere:"
+    echo "  echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.bashrc"
+    echo "  source ~/.bashrc"
+    echo ""
+fi
+
 echo "✓ Connecting to room $ROOM_ID..."
 echo ""
 
 # Now stdin is the real TTY, so we can exec directly
-exec "$BINARY_PATH" "$HOST" "$ROOM_ID"
+exec "$BINARY_PATH" "$ROOM_ID"
 "#, room_id);
 
     (
