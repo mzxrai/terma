@@ -5,7 +5,7 @@ use std::sync::Arc;
 use terma_shared::ChatMessage;
 use tokio::sync::{mpsc, RwLock};
 
-const MAX_MESSAGE_HISTORY: usize = 100;
+const MAX_MESSAGE_HISTORY: usize = 500;
 
 #[derive(Clone)]
 pub struct AppState {
