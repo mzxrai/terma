@@ -14,16 +14,16 @@ jobs:
         include:
           - os: macos-latest
             target: x86_64-apple-darwin
-            name: terma-client-darwin-x86_64
+            name: terma-darwin-x86_64
           - os: macos-latest
             target: aarch64-apple-darwin
-            name: terma-client-darwin-aarch64
+            name: terma-darwin-aarch64
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            name: terma-client-linux-x86_64
+            name: terma-linux-x86_64
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            name: terma-client-linux-aarch64
+            name: terma-linux-aarch64
 
     runs-on: ${{ matrix.os }}
 
@@ -41,14 +41,14 @@ jobs:
       - name: Build
         run: |
           if [ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]; then
-            cross build --release --target ${{ matrix.target }} --bin terma-client
+            cross build --release --target ${{ matrix.target }} --bin terma
           else
-            cargo build --release --target ${{ matrix.target }} --bin terma-client
+            cargo build --release --target ${{ matrix.target }} --bin terma
           fi
 
       - name: Rename binary
         run: |
-          cp target/${{ matrix.target }}/release/terma-client ${{ matrix.name }}
+          cp target/${{ matrix.target }}/release/terma ${{ matrix.name }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -75,7 +75,7 @@ jobs:
 
       - name: Verify binaries are not zipped
         run: |
-          for file in binaries/*/terma-client-*; do
+          for file in binaries/*/terma-*; do
             echo "Checking $file"
             file $file
             if file $file | grep -q "Zip archive"; then
@@ -92,10 +92,10 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            binaries/terma-client-darwin-x86_64/terma-client-darwin-x86_64
-            binaries/terma-client-darwin-aarch64/terma-client-darwin-aarch64
-            binaries/terma-client-linux-x86_64/terma-client-linux-x86_64
-            binaries/terma-client-linux-aarch64/terma-client-linux-aarch64
+            binaries/terma-darwin-x86_64/terma-darwin-x86_64
+            binaries/terma-darwin-aarch64/terma-darwin-aarch64
+            binaries/terma-linux-x86_64/terma-linux-x86_64
+            binaries/terma-linux-aarch64/terma-linux-aarch64
           body: |
             Automatically built binaries for all platforms.
             Updated on every push to main/master.
