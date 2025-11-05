@@ -17,6 +17,7 @@ tokio-tungstenite = { version = "0.24", features = ["rustls-tls-native-roots"] }
 futures = "0.3"
 chrono = "0.4"
 uuid = "1.11"
+dirs = "5.0"
 
 [[bin]]
 name = "terma-client"
