@@ -24,14 +24,31 @@ use uuid::Uuid;
 async fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
 
-    if args.len() != 3 {
-        eprintln!("Usage: {} <host> <room_id>", args[0]);
-        eprintln!("Example: {} localhost:3000 abc123", args[0]);
-        std::process::exit(1);
-    }
+    // Get default host from compile-time environment variable or use localhost:3000
+    const DEFAULT_HOST: &str = match option_env!("TERMA_DEFAULT_HOST") {
+        Some(host) => host,
+        None => "localhost:3000",
+    };
 
-    let host = &args[1];
-    let room_id = &args[2];
+    let (host, room_id) = match args.len() {
+        2 => {
+            // Shorthand: terma <room_id>
+            (DEFAULT_HOST.to_string(), args[1].clone())
+        }
+        3 => {
+            // Full: terma <host> <room_id>
+            (args[1].clone(), args[2].clone())
+        }
+        _ => {
+            eprintln!("Usage: {} <room_id>", args[0]);
+            eprintln!("   or: {} <host> <room_id>", args[0]);
+            eprintln!();
+            eprintln!("Examples:");
+            eprintln!("  {} abc123", args[0]);
+            eprintln!("  {} localhost:3000 abc123", args[0]);
+            std::process::exit(1);
+        }
+    };
 
     // Get or prompt for username
     let username = config::get_or_prompt_username()
@@ -41,7 +58,7 @@ async fn main() -> Result<()> {
     let user_id = Uuid::new_v4().to_string()[..8].to_string();
 
     // Connect to server
-    let (conn, mut rx) = connection::Connection::connect(host, room_id, user_id.clone(), username.clone())
+    let (conn, mut rx) = connection::Connection::connect(&host, &room_id, user_id.clone(), username.clone())
         .await
         .context("Failed to establish connection")?;
 
@@ -54,7 +71,7 @@ async fn main() -> Result<()> {
     terminal.show_cursor()?;
 
     // Create app
-    let mut app = App::new(room_id.to_string(), user_id, username);
+    let mut app = App::new(room_id, user_id, username);
 
     // Run app
     let result = run_app(&mut terminal, &mut app, &conn, &mut rx).await;
