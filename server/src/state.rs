@@ -5,6 +5,7 @@ use std::sync::Arc;
 use tokio::sync::{mpsc, RwLock};
 
 // Maximum messages per room (enforced by database trigger)
+#[allow(dead_code)]
 const MAX_MESSAGE_HISTORY: usize = 1000;
 
 #[derive(Clone)]
