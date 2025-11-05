@@ -4,6 +4,7 @@ use terma_shared::ChatMessage;
 pub struct App {
     pub room_id: String,
     pub user_id: String,
+    pub username: String,
     pub messages: Vec<DisplayMessage>,
     pub input: String,
     pub online_count: usize,
@@ -14,17 +15,19 @@ pub struct App {
 
 #[derive(Clone)]
 pub struct DisplayMessage {
-    pub user_id: String,
+    pub username: String,
     pub content: String,
     pub timestamp: DateTime<Utc>,
     pub is_system: bool,
+    pub is_own_message: bool,
 }
 
 impl App {
-    pub fn new(room_id: String, user_id: String) -> Self {
+    pub fn new(room_id: String, user_id: String, username: String) -> Self {
         Self {
             room_id,
             user_id,
+            username,
             messages: Vec::new(),
             input: String::new(),
             online_count: 0,
@@ -41,20 +44,23 @@ impl App {
     }
 
     pub fn add_chat_message(&mut self, msg: ChatMessage) {
+        let is_own = msg.user_id == self.user_id;
         self.add_message(DisplayMessage {
-            user_id: msg.user_id,
+            username: msg.username,
             content: msg.content,
             timestamp: msg.timestamp,
             is_system: false,
+            is_own_message: is_own,
         });
     }
 
     pub fn add_system_message(&mut self, content: String) {
         self.add_message(DisplayMessage {
-            user_id: "system".to_string(),
+            username: "system".to_string(),
             content,
             timestamp: Utc::now(),
             is_system: true,
+            is_own_message: false,
         });
     }
 
@@ -95,7 +101,7 @@ impl DisplayMessage {
         if self.is_system {
             format!("[{}] {}", self.format_time(), self.content)
         } else {
-            format!("[{}] {}: {}", self.format_time(), self.user_id, self.content)
+            format!("[{}] {}: {}", self.format_time(), self.username, self.content)
         }
     }
 }
