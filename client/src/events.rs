@@ -1,4 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use tui_textarea::Input;
 
 pub fn handle_key_event(app: &mut crate::app::App, key: KeyEvent) -> Option<String> {
     match key.code {
@@ -6,15 +7,8 @@ pub fn handle_key_event(app: &mut crate::app::App, key: KeyEvent) -> Option<Stri
             app.quit();
             None
         }
-        KeyCode::Char(c) => {
-            app.input_push(c);
-            None
-        }
-        KeyCode::Backspace => {
-            app.input_pop();
-            None
-        }
-        KeyCode::Enter => {
+        KeyCode::Enter if !key.modifiers.contains(KeyModifiers::SHIFT) => {
+            // Enter without Shift: send message
             let message = app.input_take();
             if !message.trim().is_empty() {
                 Some(message)
@@ -22,14 +16,20 @@ pub fn handle_key_event(app: &mut crate::app::App, key: KeyEvent) -> Option<Stri
                 None
             }
         }
-        KeyCode::Up => {
+        KeyCode::Up if key.modifiers.contains(KeyModifiers::ALT) => {
+            // Alt+Up: scroll messages up
             app.scroll_up();
             None
         }
-        KeyCode::Down => {
+        KeyCode::Down if key.modifiers.contains(KeyModifiers::ALT) => {
+            // Alt+Down: scroll messages down
             app.scroll_down();
             None
         }
-        _ => None,
+        _ => {
+            // Forward all other keys to TextArea for handling
+            app.input.input(Input::from(key));
+            None
+        }
     }
 }

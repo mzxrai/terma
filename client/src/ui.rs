@@ -112,7 +112,7 @@ fn render_input(frame: &mut Frame, app: &mut App, area: Rect) {
         Block::default()
             .borders(Borders::ALL)
             .border_style(Style::default().fg(Color::White))
-            .title(" Type a message (Enter to send, Ctrl+C to quit) "),
+            .title(" Type a message (Enter: send, Shift+Enter: new line, Alt+↑/↓: scroll, Ctrl+C: quit) "),
     );
 
     // TextArea widget handles cursor positioning and multi-line rendering automatically
