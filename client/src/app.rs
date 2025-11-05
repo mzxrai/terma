@@ -55,10 +55,14 @@ impl App {
     }
 
     pub fn add_system_message(&mut self, content: String) {
+        self.add_system_message_with_time(content, Utc::now());
+    }
+
+    pub fn add_system_message_with_time(&mut self, content: String, timestamp: DateTime<Utc>) {
         self.add_message(DisplayMessage {
             username: "system".to_string(),
             content,
-            timestamp: Utc::now(),
+            timestamp,
             is_system: true,
             is_own_message: false,
         });
