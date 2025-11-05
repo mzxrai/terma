@@ -25,11 +25,21 @@ pub fn handle_key_event(app: &mut crate::app::App, key: KeyEvent) -> Option<Stri
             app.input.insert_newline();
             None
         }
-        // Plain Enter or Ctrl+M: send message
+        // Plain Enter (without shift): send message
         Input {
-            key: Key::Enter, ..
+            key: Key::Enter,
+            shift: false,
+            ..
+        } => {
+            let message = app.input_take();
+            if !message.trim().is_empty() {
+                Some(message)
+            } else {
+                None
+            }
         }
-        | Input {
+        // Ctrl+M: also send message
+        Input {
             key: Key::Char('m'),
             ctrl: true,
             ..
