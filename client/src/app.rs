@@ -25,12 +25,16 @@ pub struct DisplayMessage {
 
 impl App {
     pub fn new(room_id: String, user_id: String, username: String) -> Self {
+        let mut input = TextArea::default();
+        // Enable hard wrapping at widget boundary
+        input.set_line_number_style(Style::default());
+
         Self {
             room_id,
             user_id,
             username,
             messages: Vec::new(),
-            input: TextArea::default(),
+            input,
             online_count: 0,
             scroll_offset: 0,
             connected: false,

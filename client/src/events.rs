@@ -7,7 +7,12 @@ pub fn handle_key_event(app: &mut crate::app::App, key: KeyEvent) -> Option<Stri
             app.quit();
             None
         }
-        KeyCode::Enter if !key.modifiers.contains(KeyModifiers::SHIFT) => {
+        KeyCode::Enter if key.modifiers.contains(KeyModifiers::SHIFT) => {
+            // Shift+Enter: add new line (forward to TextArea)
+            app.input.input(Input::from(key));
+            None
+        }
+        KeyCode::Enter => {
             // Enter without Shift: send message
             let message = app.input_take();
             if !message.trim().is_empty() {

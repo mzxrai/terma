@@ -14,7 +14,7 @@ pub fn render(frame: &mut Frame, app: &mut App) {
         .constraints([
             Constraint::Length(3),  // Header
             Constraint::Min(0),      // Messages
-            Constraint::Min(3),     // Input (dynamic expansion)
+            Constraint::Length(5),  // Input (3 lines + 2 for borders)
         ])
         .split(frame.area());
 
@@ -103,6 +103,12 @@ fn render_input(frame: &mut Frame, app: &mut App, area: Rect) {
             .border_style(Style::default().fg(Color::White))
             .title(" Type a message (Enter: send, Shift+Enter: new line, Alt+↑/↓: scroll, Ctrl+C: quit) "),
     );
+
+    // Remove cursor line styling (no underline)
+    app.input.set_cursor_line_style(Style::default());
+
+    // Enable hard wrapping at widget boundary
+    app.input.set_hard_tab_indent(false);
 
     // TextArea widget handles cursor positioning and multi-line rendering automatically
     frame.render_widget(&app.input, area);
