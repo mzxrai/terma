@@ -16,7 +16,7 @@ tracing-subscriber.workspace = true
 axum = { version = "0.7", features = ["ws"] }
 tower = "0.5"
 tower-http = { version = "0.6", features = ["fs", "trace", "cors"] }
-sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "uuid"] }
+sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "chrono", "uuid"] }
 chrono = "0.4"
 uuid = { version = "1.11", features = ["v4"] }
 nanoid = "0.4"
