@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ClientMessage {
-    Join { user_id: String },
+    Join { user_id: String, username: String },
     SendMessage { content: String },
     Ping,
 }
@@ -28,11 +28,13 @@ pub enum ServerMessage {
     },
     UserJoined {
         user_id: String,
+        username: String,
         timestamp: DateTime<Utc>,
         online_count: usize,
     },
     UserLeft {
         user_id: String,
+        username: String,
         timestamp: DateTime<Utc>,
         online_count: usize,
     },
