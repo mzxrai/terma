@@ -34,13 +34,12 @@ pub async fn index() -> Response {
         .container {
             max-width: 42rem;
             width: 100%;
-            position: relative;
         }
 
         .github-link {
-            position: absolute;
-            top: 0;
-            right: 0;
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
             color: #000000;
             transition: opacity 0.2s;
         }
