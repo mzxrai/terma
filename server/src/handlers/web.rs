@@ -137,8 +137,6 @@ pub async fn index() -> Response {
             <button id="createBtn" onclick="createRoom()">Create New Room</button>
 
             <div id="commandBox" class="command-box">
-                <div class="divider"></div>
-
                 <div class="label">Run this command in your terminal</div>
                 <div id="command" class="command"></div>
                 <button id="copyCommandBtn" class="copy-btn" onclick="copyCommand()">Copy Command</button>
