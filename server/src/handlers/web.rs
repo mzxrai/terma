@@ -141,13 +141,16 @@ pub async fn index() -> Response {
 
                 <div class="label">Run this command in your terminal</div>
                 <div id="command" class="command"></div>
-                <button class="copy-btn" onclick="copyCommand()">Copy Command</button>
+                <button id="copyCommandBtn" class="copy-btn" onclick="copyCommand()">Copy Command</button>
 
                 <div style="margin-top: 2rem;">
                     <div class="label">Share this link with others</div>
                     <div id="shareLink" class="command"></div>
-                    <button class="copy-btn" onclick="copyLink()">Copy Link</button>
+                    <button id="copyLinkBtn" class="copy-btn" onclick="copyLink()">Copy Link</button>
                 </div>
+
+                <div class="divider"></div>
+                <button id="createAnotherBtn" style="display: none;" onclick="createRoom()">Create Another Room</button>
             </div>
         </div>
 
@@ -159,8 +162,11 @@ pub async fn index() -> Response {
     <script>
         async function createRoom() {
             const btn = document.getElementById('createBtn');
-            btn.disabled = true;
-            btn.textContent = 'Creating...';
+            const anotherBtn = document.getElementById('createAnotherBtn');
+            const activeBtn = btn.style.display === 'none' ? anotherBtn : btn;
+
+            activeBtn.disabled = true;
+            activeBtn.textContent = 'Creating...';
 
             try {
                 const response = await fetch('/api/rooms', {
@@ -170,29 +176,58 @@ pub async fn index() -> Response {
                 if (!response.ok) throw new Error('Failed to create room');
 
                 const data = await response.json();
-
-                document.getElementById('command').textContent = data.install_command;
-                document.getElementById('shareLink').textContent = window.location.origin + '/#' + data.room_id;
-                document.getElementById('commandBox').classList.add('active');
-
-                btn.textContent = 'Create Another Room';
+                displayRoom(data.room_id, data.install_command);
             } catch (error) {
                 alert('Error creating room: ' + error.message);
-                btn.textContent = 'Create New Room';
+                activeBtn.textContent = btn.style.display === 'none' ? 'Create Another Room' : 'Create New Room';
             } finally {
-                btn.disabled = false;
+                activeBtn.disabled = false;
             }
         }
 
+        function displayRoom(roomId, installCommand) {
+            document.getElementById('command').textContent = installCommand;
+            document.getElementById('shareLink').textContent = window.location.origin + '/#' + roomId;
+            document.getElementById('commandBox').classList.add('active');
+            document.getElementById('createBtn').style.display = 'none';
+            document.getElementById('createAnotherBtn').style.display = 'block';
+            window.location.hash = roomId;
+        }
+
         function copyCommand() {
+            const btn = document.getElementById('copyCommandBtn');
             const command = document.getElementById('command').textContent;
             navigator.clipboard.writeText(command);
+
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
         }
 
         function copyLink() {
+            const btn = document.getElementById('copyLinkBtn');
             const link = document.getElementById('shareLink').textContent;
             navigator.clipboard.writeText(link);
+
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
         }
+
+        // Handle hash on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const hash = window.location.hash.slice(1);
+            if (hash) {
+                const host = window.location.host;
+                const protocol = window.location.protocol;
+                const installCommand = `sh -c "$(curl -fsSL ${protocol}//${host}/join/${hash})"`;
+                displayRoom(hash, installCommand);
+            }
+        });
     </script>
 </body>
 </html>"#;
