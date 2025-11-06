@@ -3,6 +3,15 @@ import { Container, getContainer } from "@cloudflare/containers";
 export class TermaContainer extends Container {
   defaultPort = 8080;
   sleepAfter = '10m';
+
+  constructor(state: any, env: WorkerEnv) {
+    super(state, env);
+    this.envVars = {
+      BIND_ADDR: "0.0.0.0:8080",
+      DATABASE_URL: env.DATABASE_URL || "",
+      HOST: env.HOST || "terma-worker.mzxrai.workers.dev"
+    };
+  }
 }
 
 export default {
