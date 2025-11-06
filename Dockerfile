@@ -8,6 +8,9 @@ COPY Cargo.toml Cargo.lock ./
 COPY server/Cargo.toml ./server/Cargo.toml
 COPY shared/Cargo.toml ./shared/Cargo.toml
 COPY client/Cargo.toml ./client/Cargo.toml
+COPY server/src ./server/src
+COPY shared/src ./shared/src
+COPY client/src ./client/src
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef AS builder
