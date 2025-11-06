@@ -2,109 +2,57 @@
 
 A real-time chat application that lives in your terminal.
 
-## What is Terma?
+## Overview
 
-Terma is a minimalist chat application built for the terminal. Create a chat room, share a link, and anyone can join the conversation from their command line. No registration, no authentication, just instant communication.
+Terma is a minimalist chat application built for the terminal. Create a chat room from a web interface, share a one-line install command, and anyone can join the conversation from their command line. No registration, no authentication, just instant communication.
+
+## Try It
+
+Visit [terma.mattmay.dev](https://terma.mattmay.dev) to create a room and get a one-line install command.
 
 ## Features
 
-- **Terminal-based UI**: Clean, responsive interface built with Ratatui
-- **Real-time messaging**: WebSocket-powered instant communication
-- **Persistent history**: Messages are stored in PostgreSQL and survive server restarts
-- **One-line installation**: Share a curl command to get others connected instantly
-- **Cross-platform**: Works on macOS and Linux (x86_64 and ARM64)
-- **Text selection and clipboard**: Native terminal clipboard support via OSC-52
+- **Terminal-based UI**: Clean interface built with Ratatui
+- **Real-time messaging**: WebSocket-powered bidirectional communication
+- **Persistent history**: PostgreSQL storage with automatic 1000-message limit per room
+- **One-line installation**: curl-based installer downloads and runs the client binary
+- **Cross-platform**: macOS and Linux support (x86_64 and ARM64)
+- **Text selection**: Click and drag to select, right-click to copy
+- **Clipboard integration**: OSC-52 terminal escape sequences work over SSH
 - **Native notifications**: macOS system notifications for incoming messages
-- **Presence indicators**: See when users join and leave rooms
-
-## Quick Start
-
-### Using a hosted instance
-
-Visit [terma.mattmay.dev](https://terma.mattmay.dev) to create a room and get an install command.
-
-### Running your own server
-
-**Prerequisites:**
-- Rust 1.75 or later
-- PostgreSQL 14 or later
-- Node.js (for development workflow)
-
-**Setup:**
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/terma.git
-cd terma
-
-# Set up the database
-createdb terma
-export DATABASE_URL="postgres://localhost/terma"
-
-# Run in development mode (auto-restart on changes)
-npm run dev
-
-# Or build for production
-cargo build --release
-cargo run --release --bin terma-server
-```
-
-The server will start on `http://localhost:3000`.
-
-### Connecting as a client
-
-```bash
-# Build the client
-cargo build --release --bin terma
-
-# Connect to a room
-./target/release/terma localhost:3000 <room-id>
-```
-
-Or use the one-line installer from the web interface.
+- **Presence indicators**: Join/leave events with online user counts
 
 ## Architecture
 
 Terma is built as a Cargo workspace with three crates:
 
-- **`shared/`**: Common protocol and data models
-- **`server/`**: Axum-based web server with WebSocket support
-- **`client/`**: Ratatui-based terminal UI
+- **`shared/`**: Common protocol and data models used by both client and server
+- **`server/`**: Axum web server with WebSocket handlers and PostgreSQL persistence
+- **`client/`**: Ratatui terminal UI with async WebSocket client
 
 ### Technology Stack
 
 **Server:**
 - Axum for HTTP and WebSocket handling
-- SQLx for PostgreSQL integration with compile-time query verification
-- Tokio for async runtime
+- SQLx for PostgreSQL with compile-time query verification
+- Tokio async runtime
 
 **Client:**
-- Ratatui for terminal UI
+- Ratatui for terminal UI rendering
 - tui-textarea for multi-line text input
 - tokio-tungstenite for WebSocket client
 - crossterm for terminal manipulation
 
-## Configuration
+## Using Terma
 
-### Server Environment Variables
+### Creating and Joining Rooms
 
-- `DATABASE_URL`: PostgreSQL connection string (default: `postgres://localhost/terma`)
-- `BIND_ADDR`: Server bind address (default: `0.0.0.0:3000`)
-- `HOST`: Public hostname for install commands (default: `localhost:3000`)
+1. Visit the web interface to create a room
+2. Copy the one-line install command
+3. Share it with others
+4. Run the command to download and launch the client
 
-### Client Configuration
-
-The client stores your username in `~/.terma/config.json`. You'll be prompted to set it on first run.
-
-## Usage
-
-### Creating a Room
-
-1. Visit the web interface (e.g., `http://localhost:3000`)
-2. Click "Create New Room"
-3. Copy the install command or share the room link
-
-### Chat Commands
+### Terminal Controls
 
 - **Enter**: Send message
 - **Shift+Enter**: Insert newline
@@ -112,63 +60,31 @@ The client stores your username in `~/.terma/config.json`. You'll be prompted to
 - **Mouse scroll**: Scroll through history
 - **Click and drag**: Select text
 - **Right-click**: Copy selected text
-- **Ctrl+C**: Quit (or copy selected text if selection is active)
+- **Ctrl+C**: Quit (or copy selected text if active)
 
-## Development
-
-### Project Structure
+## Project Structure
 
 ```
 terma/
 ├── shared/           # Shared protocol library
 │   └── src/
-│       ├── models.rs     # Data structures
-│       └── protocol.rs   # WebSocket messages
+│       ├── models.rs     # Data structures (Room, ChatMessage, User)
+│       └── protocol.rs   # WebSocket message types
 ├── server/           # Axum web server
-│   ├── migrations/       # Database migrations
+│   ├── migrations/       # SQLx database migrations
 │   └── src/
 │       ├── db.rs         # Database operations
-│       ├── state.rs      # State management
+│       ├── state.rs      # Application state and room registry
 │       ├── ws.rs         # WebSocket handler
 │       └── handlers/     # HTTP routes
 └── client/           # Ratatui terminal client
     └── src/
         ├── app.rs        # Application state
         ├── ui.rs         # UI rendering
-        ├── events.rs     # Input handling
-        └── connection.rs # WebSocket client
-```
-
-### Development Workflow
-
-```bash
-# Run both server and client watchers
-npm run dev
-
-# Server only (auto-restart on changes)
-npm run dev:server
-
-# Client only (auto-rebuild on changes)
-npm run dev:client
-
-# Run tests
-cargo test
-
-# Build everything
-cargo build --release
-```
-
-### Database Migrations
-
-```bash
-# Run migrations
-cargo sqlx migrate run
-
-# Create a new migration
-cargo sqlx migrate add <migration_name>
-
-# Prepare for offline compilation
-cargo sqlx prepare
+        ├── events.rs     # Keyboard and mouse input
+        ├── connection.rs # WebSocket client
+        ├── clipboard.rs  # OSC-52 clipboard integration
+        └── notifications.rs # macOS native notifications
 ```
 
 ## How It Works
@@ -208,19 +124,23 @@ Rooms and messages are stored in PostgreSQL:
 - Messages include timestamps, user info, and content
 - Indexes optimize message retrieval by room and timestamp
 
-## Building for Distribution
+## Implementation Details
 
-The project includes GitHub Actions workflows for building binaries:
+### Custom Base64 Encoder
 
-```bash
-# Build for specific platforms
-cargo build --release --target x86_64-unknown-linux-musl
-cargo build --release --target aarch64-unknown-linux-musl
-cargo build --release --target x86_64-apple-darwin
-cargo build --release --target aarch64-apple-darwin
-```
+The clipboard module implements a custom base64 encoder for OSC-52 escape sequences, enabling clipboard support across SSH sessions without external dependencies.
 
-Compiled binaries are suitable for distribution via the install script.
+### Database Trigger for Message Limits
+
+PostgreSQL triggers automatically delete old messages when the 1000-message limit is exceeded, guaranteeing consistency even with multiple server instances.
+
+### Render Cache System
+
+The client maintains a render cache for text selection, mapping mouse coordinates to text positions across word-wrapped content.
+
+### Cross-Platform Binary Distribution
+
+GitHub Actions builds binaries for macOS (x86_64, ARM64) and Linux (x86_64, ARM64) using musl for static linking. The install script detects OS and architecture to download the appropriate binary.
 
 ## License
 
