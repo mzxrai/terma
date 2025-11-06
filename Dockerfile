@@ -1,18 +1,25 @@
 # Build stage
-FROM rust:1.91-bookworm AS builder
-
+FROM rust:1.91-bookworm AS chef
 WORKDIR /app
+RUN cargo install cargo-chef
 
-# Install build dependencies
+FROM chef AS planner
+COPY Cargo.toml Cargo.lock ./
+COPY server/Cargo.toml ./server/Cargo.toml
+COPY shared/Cargo.toml ./shared/Cargo.toml
+COPY client/Cargo.toml ./client/Cargo.toml
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy everything
-COPY . .
+COPY --from=planner /app/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
 
-# Build the application
+COPY . .
 RUN cargo build --release --bin terma-server
 
 # Runtime stage
