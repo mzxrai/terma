@@ -5,7 +5,8 @@ use axum::{
 };
 
 pub async fn install_script(Path(room_id): Path<String>) -> Response {
-    let script = format!(r#"#!/bin/sh
+    let script = format!(
+        r#"#!/bin/sh
 set -e
 
 ROOM_ID="{}"
@@ -72,7 +73,9 @@ echo ""
 
 # Now stdin is the real TTY, so we can exec directly
 exec "$BINARY_PATH" "$ROOM_ID"
-"#, room_id);
+"#,
+        room_id
+    );
 
     (
         StatusCode::OK,

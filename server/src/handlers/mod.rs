@@ -1,9 +1,9 @@
+pub mod download;
+pub mod install;
 pub mod rooms;
 pub mod web;
-pub mod install;
-pub mod download;
 
+pub use download::*;
+pub use install::*;
 pub use rooms::*;
 pub use web::*;
-pub use install::*;
-pub use download::*;

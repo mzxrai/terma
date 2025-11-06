@@ -31,12 +31,18 @@ pub async fn download_binary(Path(filename): Path<String>) -> Response {
     let binary_path = std::path::PathBuf::from("target/release/terma");
 
     if !binary_path.exists() {
-        return (StatusCode::NOT_FOUND, "Binary not found. Run `cargo build --release -p terma-client`").into_response();
+        return (
+            StatusCode::NOT_FOUND,
+            "Binary not found. Run `cargo build --release -p terma-client`",
+        )
+            .into_response();
     }
 
     let file = match File::open(&binary_path).await {
         Ok(file) => file,
-        Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to open binary").into_response(),
+        Err(_) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to open binary").into_response()
+        }
     };
 
     let stream = ReaderStream::new(file);
@@ -46,7 +52,10 @@ pub async fn download_binary(Path(filename): Path<String>) -> Response {
         StatusCode::OK,
         [
             (header::CONTENT_TYPE, "application/octet-stream"),
-            (header::CONTENT_DISPOSITION, "attachment; filename=\"terma\""),
+            (
+                header::CONTENT_DISPOSITION,
+                "attachment; filename=\"terma\"",
+            ),
         ],
         body,
     )

@@ -1,0 +1,12 @@
+{
+  "name": "terma-cloudflare-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@cloudflare/containers": "^0.0.30"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.2025.10.30"
+  }
+}

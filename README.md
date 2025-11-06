@@ -125,8 +125,10 @@ cargo run --release -p terma-client ROOM_ID
 Terma works great on Cloudflare Containers with a Neon PostgreSQL database:
 
 1. Set up a Neon database at [neon.tech](https://neon.tech/)
-2. Deploy the container with `DATABASE_URL` pointing to your Neon instance
-3. The filesystem is ephemeral, but PostgreSQL provides persistence
+2. From `cloudflare/worker/`, install Worker dependencies (`npm install`) so Wrangler can bundle the Worker and `@cloudflare/containers` helpers.
+3. Configure runtime secrets (`DATABASE_URL`, optional `HOST` override) via `npx wrangler secret put` (secrets are required because the Worker passes them into the container via the Container class). By default the Worker will serve from `terma-worker.mzxrai.workers.dev`.
+4. Run `npx wrangler deploy` at the repo root; Wrangler will build the Docker image defined in `./Dockerfile`, push it to Cloudflare’s registry, and deploy the Worker that proxies all HTTP/WebSocket traffic to the singleton container.
+5. The filesystem is ephemeral, but PostgreSQL provides persistence
 
 ### GitHub Actions Setup
 

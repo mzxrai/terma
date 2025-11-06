@@ -24,8 +24,8 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     // Initialize database
-    let database_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "sqlite:terma.db".to_string());
+    let database_url =
+        std::env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:terma.db".to_string());
 
     let db = db::init_db(&database_url).await?;
     info!("Database initialized");
@@ -44,8 +44,7 @@ async fn main() -> anyhow::Result<()> {
         .layer(TraceLayer::new_for_http());
 
     // Start server
-    let addr = std::env::var("BIND_ADDR")
-        .unwrap_or_else(|_| "0.0.0.0:3000".to_string());
+    let addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:3000".to_string());
 
     info!("Server starting on {}", addr);
 

@@ -1,4 +1,5 @@
 mod app;
+mod clipboard;
 mod config;
 mod connection;
 mod events;
@@ -7,14 +8,14 @@ mod ui;
 use anyhow::{Context, Result};
 use app::App;
 use crossterm::{
-    event::{self, Event, MouseEventKind, EnableMouseCapture, DisableMouseCapture, EnableBracketedPaste, DisableBracketedPaste},
+    event::{
+        self, DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
+        Event, MouseButton, MouseEventKind,
+    },
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{
-    backend::CrosstermBackend,
-    Terminal,
-};
+use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io;
 use std::time::Duration;
 use terma_shared::{ClientMessage, ServerMessage};
@@ -51,21 +52,26 @@ async fn main() -> Result<()> {
     };
 
     // Get or prompt for username
-    let username = config::get_or_prompt_username()
-        .context("Failed to get username")?;
+    let username = config::get_or_prompt_username().context("Failed to get username")?;
 
     // Generate a random user ID
     let user_id = Uuid::new_v4().to_string()[..8].to_string();
 
     // Connect to server
-    let (conn, mut rx) = connection::Connection::connect(&host, &room_id, user_id.clone(), username.clone())
-        .await
-        .context("Failed to establish connection")?;
+    let (conn, mut rx) =
+        connection::Connection::connect(&host, &room_id, user_id.clone(), username.clone())
+            .await
+            .context("Failed to establish connection")?;
 
     // Setup terminal
     enable_raw_mode().context("Failed to enable raw mode. Make sure you're running in a terminal (not via pipe or redirect).")?;
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture, EnableBracketedPaste)?;
+    execute!(
+        stdout,
+        EnterAlternateScreen,
+        EnableBracketedPaste,
+        EnableMouseCapture
+    )?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
     terminal.show_cursor()?;
@@ -78,7 +84,12 @@ async fn main() -> Result<()> {
 
     // Restore terminal
     disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen, DisableMouseCapture, DisableBracketedPaste)?;
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableBracketedPaste,
+        DisableMouseCapture
+    )?;
     terminal.show_cursor()?;
 
     if let Err(e) = result {
@@ -96,6 +107,8 @@ async fn run_app(
     rx: &mut tokio::sync::mpsc::UnboundedReceiver<ServerMessage>,
 ) -> Result<()> {
     loop {
+        let mut did_work = false;
+
         // Draw UI
         terminal.draw(|f| ui::render(f, app))?;
 
@@ -106,6 +119,7 @@ async fn run_app(
 
         // Check for keyboard and mouse events (non-blocking with short timeout)
         if event::poll(Duration::from_millis(50))? {
+            did_work = true;
             match event::read()? {
                 Event::Key(key) => {
                     if let Some(message) = events::handle_key_event(app, key) {
@@ -124,21 +138,25 @@ async fn run_app(
         }
 
         // Check for incoming WebSocket messages (non-blocking)
-        match rx.try_recv() {
-            Ok(msg) => {
-                handle_server_message(app, msg);
-            }
-            Err(tokio::sync::mpsc::error::TryRecvError::Empty) => {
-                // No message, continue
-            }
-            Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => {
-                // Connection closed
-                break;
+        loop {
+            match rx.try_recv() {
+                Ok(msg) => {
+                    handle_server_message(app, msg);
+                    did_work = true;
+                }
+                Err(tokio::sync::mpsc::error::TryRecvError::Empty) => {
+                    break;
+                }
+                Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => {
+                    return Ok(());
+                }
             }
         }
 
-        // Small yield to prevent CPU spinning
-        tokio::time::sleep(Duration::from_millis(10)).await;
+        if !did_work {
+            // Small sleep when idle to avoid busy-looping
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
     }
 
     Ok(())
@@ -154,6 +172,25 @@ fn handle_mouse_event(app: &mut App, mouse: crossterm::event::MouseEvent) {
             // Scroll down in message history (decrease offset to show newer messages)
             app.scroll_down();
         }
+        MouseEventKind::Down(MouseButton::Left) => {
+            if let Some(pos) = app.message_position_from_mouse(mouse.column, mouse.row) {
+                app.start_selection(pos);
+            } else {
+                app.clear_selection();
+            }
+        }
+        MouseEventKind::Drag(MouseButton::Left) | MouseEventKind::Up(MouseButton::Left) => {
+            if let Some(pos) = app.message_position_from_mouse(mouse.column, mouse.row) {
+                app.update_selection(pos);
+            }
+        }
+        MouseEventKind::Up(MouseButton::Right) => {
+            if app.has_selection() {
+                if let Err(err) = app.copy_selection() {
+                    app.add_system_message(format!("Copy failed: {}", err));
+                }
+            }
+        }
         _ => {}
     }
 }
@@ -166,10 +203,7 @@ fn handle_paste_event(app: &mut App, text: String) {
 
 fn handle_server_message(app: &mut App, msg: ServerMessage) {
     match msg {
-        ServerMessage::Welcome {
-            online_count,
-            ..
-        } => {
+        ServerMessage::Welcome { online_count, .. } => {
             app.connected = true;
             app.online_count = online_count;
             app.add_system_message(format!(

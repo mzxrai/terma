@@ -1,7 +1,19 @@
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use tui_textarea::{Input, Key};
 
 pub fn handle_key_event(app: &mut crate::app::App, key: KeyEvent) -> Option<String> {
+    if matches!(key.code, KeyCode::Char('c'))
+        && (key.modifiers.contains(KeyModifiers::CONTROL)
+            || key.modifiers.contains(KeyModifiers::SUPER))
+    {
+        if app.has_selection() {
+            if let Err(err) = app.copy_selection() {
+                app.add_system_message(format!("Copy failed: {}", err));
+            }
+            return None;
+        }
+    }
+
     // Convert crossterm KeyEvent to tui_textarea Input first
     let input = Input::from(key);
 
@@ -11,6 +23,7 @@ pub fn handle_key_event(app: &mut crate::app::App, key: KeyEvent) -> Option<Stri
         Input {
             key: Key::Char('c'),
             ctrl: true,
+            shift: false,
             ..
         } => {
             app.quit();

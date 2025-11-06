@@ -34,9 +34,7 @@ async fn handle_socket(socket: WebSocket, room_id: String, state: AppState) {
     };
 
     if !room_exists {
-        let _ = socket
-            .close()
-            .await;
+        let _ = socket.close().await;
         return;
     }
 
@@ -49,7 +47,9 @@ async fn handle_socket(socket: WebSocket, room_id: String, state: AppState) {
     let (user_id, username) = loop {
         match receiver.next().await {
             Some(Ok(Message::Text(text))) => {
-                if let Ok(ClientMessage::Join { user_id, username }) = ClientMessage::from_json(&text) {
+                if let Ok(ClientMessage::Join { user_id, username }) =
+                    ClientMessage::from_json(&text)
+                {
                     break (user_id, username);
                 }
             }
@@ -87,15 +87,21 @@ async fn handle_socket(socket: WebSocket, room_id: String, state: AppState) {
         online_count,
     };
 
-    if sender.send(Message::Text(welcome.to_json().unwrap())).await.is_err() {
+    if sender
+        .send(Message::Text(welcome.to_json().unwrap()))
+        .await
+        .is_err()
+    {
         return;
     }
 
     if !history.is_empty() {
-        let history_msg = ServerMessage::History {
-            messages: history,
-        };
-        if sender.send(Message::Text(history_msg.to_json().unwrap())).await.is_err() {
+        let history_msg = ServerMessage::History { messages: history };
+        if sender
+            .send(Message::Text(history_msg.to_json().unwrap()))
+            .await
+            .is_err()
+        {
             return;
         }
     }
@@ -179,12 +185,7 @@ async fn handle_socket(socket: WebSocket, room_id: String, state: AppState) {
     }
 }
 
-async fn handle_client_message(
-    msg: ClientMessage,
-    room_id: &str,
-    user_id: &str,
-    state: &AppState,
-) {
+async fn handle_client_message(msg: ClientMessage, room_id: &str, user_id: &str, state: &AppState) {
     match msg {
         ClientMessage::SendMessage { content } => {
             if content.trim().is_empty() {
@@ -208,14 +209,12 @@ async fn handle_client_message(
 
             let rooms = state.rooms.read().await;
             if let Some(room) = rooms.get(room_id) {
-                let username = room.get_username(user_id).unwrap_or_else(|| "Unknown".to_string());
+                let username = room
+                    .get_username(user_id)
+                    .unwrap_or_else(|| "Unknown".to_string());
 
-                let chat_msg = ChatMessage::new(
-                    room_id.to_string(),
-                    user_id.to_string(),
-                    username,
-                    content,
-                );
+                let chat_msg =
+                    ChatMessage::new(room_id.to_string(), user_id.to_string(), username, content);
 
                 // Save message to database
                 if let Err(e) = db::save_message(&state.db, &chat_msg).await {
@@ -223,9 +222,7 @@ async fn handle_client_message(
                     // Continue broadcasting even if save fails
                 }
 
-                let server_msg = ServerMessage::Message {
-                    message: chat_msg,
-                };
+                let server_msg = ServerMessage::Message { message: chat_msg };
 
                 room.broadcast(Message::Text(server_msg.to_json().unwrap()), None);
             }

@@ -37,8 +37,7 @@ impl Config {
             .with_context(|| format!("Failed to create config directory: {}", dir.display()))?;
 
         let path = Self::config_file()?;
-        let contents = serde_json::to_string_pretty(self)
-            .context("Failed to serialize config")?;
+        let contents = serde_json::to_string_pretty(self).context("Failed to serialize config")?;
         fs::write(&path, contents)
             .with_context(|| format!("Failed to write config file: {}", path.display()))?;
         Ok(())

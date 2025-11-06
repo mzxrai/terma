@@ -64,9 +64,7 @@ impl Connection {
     }
 
     pub fn send(&self, message: ClientMessage) -> Result<()> {
-        self.tx
-            .send(message)
-            .context("Failed to send message")?;
+        self.tx.send(message).context("Failed to send message")?;
         Ok(())
     }
 }

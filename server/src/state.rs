@@ -31,7 +31,12 @@ impl RoomState {
         self.connections.len()
     }
 
-    pub fn add_connection(&mut self, user_id: String, username: String, tx: mpsc::UnboundedSender<Message>) {
+    pub fn add_connection(
+        &mut self,
+        user_id: String,
+        username: String,
+        tx: mpsc::UnboundedSender<Message>,
+    ) {
         self.connections.insert(user_id.clone(), tx);
         self.usernames.insert(user_id, username);
     }

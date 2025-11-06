@@ -1,0 +1,33 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "terma-worker",
+  "main": "cloudflare/worker/src/index.ts",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "containers": [
+    {
+      "image": "./Dockerfile",
+      "class_name": "TermaContainer",
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "TERMA_CONTAINER",
+        "class_name": "TermaContainer"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["TermaContainer"]
+    }
+  ],
+  "vars": {
+    "TERMA_DEFAULT_HOST": "terma-worker.mzxrai.workers.dev",
+    "HOST": "terma-worker.mzxrai.workers.dev"
+  }
+}
