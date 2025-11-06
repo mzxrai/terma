@@ -7,7 +7,6 @@ export class TermaContainer extends Container {
   constructor(state: any, env: WorkerEnv) {
     super(state, env);
     this.envVars = {
-      BIND_ADDR: "0.0.0.0:8080",
       DATABASE_URL: env.DATABASE_URL || "",
       HOST: env.HOST || "terma-worker.mzxrai.workers.dev"
     };
