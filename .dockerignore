@@ -1,6 +1,3 @@
-# Exclude client - not needed for server Docker build
-client/
-
 # Build artifacts
 target/
 **/target/
