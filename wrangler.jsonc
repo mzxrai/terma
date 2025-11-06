@@ -24,6 +24,12 @@
       "new_sqlite_classes": ["TermaContainer"]
     }
   ],
+  "routes": [
+    {
+      "pattern": "terma.mattmay.dev",
+      "custom_domain": true
+    }
+  ],
   "observability": {
     "logs": {
       "enabled": false,
@@ -33,6 +39,6 @@
     }
   },
   "vars": {
-    "HOST": "terma-worker.mzxrai.workers.dev"
+    "HOST": "terma.mattmay.dev"
   }
 }

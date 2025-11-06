@@ -8,7 +8,7 @@ export class TermaContainer extends Container {
     super(state, env);
     this.envVars = {
       DATABASE_URL: env.DATABASE_URL || "",
-      HOST: env.HOST || "terma-worker.mzxrai.workers.dev"
+      HOST: env.HOST || "terma.mattmay.dev"
     };
   }
 }

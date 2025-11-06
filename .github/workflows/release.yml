@@ -46,7 +46,7 @@ jobs:
         env:
           # TERMA_DEFAULT_HOST is compiled into the binary
           # This is the Cloudflare Workers hostname
-          TERMA_DEFAULT_HOST: terma-worker.mzxrai.workers.dev
+          TERMA_DEFAULT_HOST: terma.mattmay.dev
         run: |
           if [ "${{ matrix.target }}" == "aarch64-unknown-linux-musl" ]; then
             cross build --release --target ${{ matrix.target }} --bin terma
