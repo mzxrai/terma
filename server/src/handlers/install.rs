@@ -11,7 +11,6 @@ set -e
 
 ROOM_ID="{}"
 
-HOST="${{HOST:-localhost:3000}}"
 PLATFORM="$(uname -s | tr 'A-Z' 'a-z')"
 ARCH="$(uname -m)"
 
@@ -29,7 +28,7 @@ case "$ARCH" in
 esac
 
 BINARY_NAME="terma-${{PLATFORM}}-${{ARCH}}"
-DOWNLOAD_URL="http://${{HOST}}/download/${{BINARY_NAME}}"
+DOWNLOAD_URL="https://github.com/mzxrai/terma/releases/download/latest/${{BINARY_NAME}}"
 
 echo "Downloading terma client..."
 TEMP_FILE=$(mktemp)

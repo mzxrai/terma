@@ -20,7 +20,8 @@ pub async fn create_room(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let host = std::env::var("HOST").unwrap_or_else(|_| "localhost:3000".to_string());
-    let install_command = format!(r#"sh -c "$(curl -fsSL http://{}/join/{})""#, host, room_id);
+    let protocol = if host.starts_with("localhost") { "http" } else { "https" };
+    let install_command = format!(r#"sh -c "$(curl -fsSL {}://{}/join/{})""#, protocol, host, room_id);
 
     Ok(Json(CreateRoomResponse {
         room_id,
