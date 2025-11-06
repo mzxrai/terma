@@ -152,7 +152,7 @@ pub async fn index() -> Response {
         </div>
 
         <div class="footer">
-            Built with Rust, Axum, and Ratatui
+            Built with Rust, Axum, and Ratatui by <a href="https://github.com/mzxrai" target="_blank" style="color: #0066cc; text-decoration: underline;">@mzxrai</a>
         </div>
     </div>
 
