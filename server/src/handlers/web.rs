@@ -83,7 +83,6 @@ pub async fn index() -> Response {
 
         .command-box {
             display: none;
-            margin-top: 2rem;
         }
 
         .command-box.active {
