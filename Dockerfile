@@ -9,27 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy manifests and create dummy files to cache dependencies
-COPY Cargo.toml Cargo.lock ./
-COPY server/Cargo.toml ./server/Cargo.toml
-COPY shared/Cargo.toml ./shared/Cargo.toml
-COPY client/Cargo.toml ./client/Cargo.toml
-
-RUN mkdir -p server/src shared/src client/src && \
-    echo "fn main() {}" > server/src/main.rs && \
-    echo "" > shared/src/lib.rs && \
-    echo "fn main() {}" > client/src/main.rs
-
-# Build dependencies only (this layer will be cached)
-RUN cargo build --release --bin terma-server && rm -rf src server/src shared/src client/src
-
-# Copy actual source code
-COPY shared ./shared
-COPY server ./server
-COPY client ./client
-
-# Touch to ensure rebuild
-RUN touch server/src/main.rs
+# Copy everything
+COPY . .
 
 # Build the application
 RUN cargo build --release --bin terma-server
