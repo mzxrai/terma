@@ -1,24 +1,36 @@
-/target
-/client/target
-/server/target
-/cloudflare/worker/node_modules
-/node_modules
-.git
-.gitignore
-.github
-/test_client.sh
-/terma.db
-/README.md
-/PLAN.md
-/TODO.md
-/AGENTS.md
-/CLAUDE.md
-/client
-/shared
-/server
-!/Cargo.toml
-!/Cargo.lock
-!/server
-!/shared
-!/server/**
-!/shared/**
+# Exclude client - not needed for server Docker build
+client/
+
+# Build artifacts
+target/
+**/target/
+
+# Dependencies
+node_modules/
+.wrangler/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# VCS
+.git/
+.github/
+
+# Documentation
+README.md
+PLAN.md
+TODO.md
+AGENTS.md
+CLAUDE.md
+
+# Development
+.env
+*.db
+*.db-shm
+*.db-wal
+test_client.sh
+
+# Cloudflare worker (not needed in server container)
+cloudflare/

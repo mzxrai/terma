@@ -1,43 +1,55 @@
-# syntax=docker/dockerfile:1
+# Build stage
+FROM rust:1.91-bookworm AS builder
 
-FROM rust:1.91-bookworm AS chef
 WORKDIR /app
-RUN cargo install cargo-chef --locked
 
-FROM chef AS planner
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy manifests and create dummy files to cache dependencies
 COPY Cargo.toml Cargo.lock ./
-COPY server/Cargo.toml server/Cargo.toml
-COPY shared/Cargo.toml shared/Cargo.toml
-# Create dummy lib.rs files for workspace members
+COPY server/Cargo.toml ./server/Cargo.toml
+COPY shared/Cargo.toml ./shared/Cargo.toml
+
 RUN mkdir -p server/src shared/src && \
     echo "fn main() {}" > server/src/main.rs && \
     echo "" > shared/src/lib.rs
-RUN cargo chef prepare --recipe-path recipe.json
 
-FROM chef AS builder
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    pkg-config \
-    libpq-dev \
-    ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+# Build dependencies only (this layer will be cached)
+RUN cargo build --release --bin terma-server && rm -rf src server/src shared/src
 
-COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json
+# Copy actual source code
+COPY shared ./shared
+COPY server ./server
 
-COPY . .
+# Touch to ensure rebuild
+RUN touch server/src/main.rs
+
+# Build the application
 RUN cargo build --release --bin terma-server
 
-FROM debian:bookworm-slim AS runtime
+# Runtime stage
+FROM debian:bookworm-slim
+
+# Install required runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libpq5 \
- && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-COPY --from=builder /app/target/release/terma-server /usr/local/bin/terma-server
+# Copy the binary from builder
+COPY --from=builder /app/target/release/terma-server /app/terma-server
 
-ENV BIND_ADDR=0.0.0.0:8080
+# Expose port
 EXPOSE 8080
 
-CMD ["terma-server"]
+# Set default bind address
+ENV BIND_ADDR=0.0.0.0:8080
+
+# Run the binary
+CMD ["/app/terma-server"]
