@@ -20,6 +20,9 @@ chrono = "0.4"
 uuid = "1.11"
 dirs = "5.0"
 
+[target.'cfg(target_os = "macos")'.dependencies]
+notify-rust = "4.11"
+
 [[bin]]
 name = "terma"
 path = "src/main.rs"

@@ -3,6 +3,7 @@ mod clipboard;
 mod config;
 mod connection;
 mod events;
+mod notifications;
 mod ui;
 
 use anyhow::{Context, Result};
@@ -217,6 +218,10 @@ fn handle_server_message(app: &mut App, msg: ServerMessage) {
             }
         }
         ServerMessage::Message { message } => {
+            // Send notification for messages from other users
+            if message.user_id != app.user_id {
+                notifications::send_notification(&message.username, &message.content);
+            }
             app.add_chat_message(message);
         }
         ServerMessage::UserJoined {
